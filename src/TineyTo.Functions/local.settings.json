@@ -1,0 +1,16 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "TABLE_CONNECTION": "UseDevelopmentStorage=true",
+    "SHORTURL_TABLE_NAME": "ShortUrls",
+    "EXPIRYINDEX_TABLE_NAME": "ShortUrlsExpiryIndex",
+    "SHORT_BASE_URL": "http://localhost:7071",
+    "ALIAS_LENGTH": "6",
+    "MAX_TTL_SECONDS": "7776000",
+    "GC_BLOB_LOCK_CONNECTION": "UseDevelopmentStorage=true",
+    "GC_BLOB_LOCK_CONTAINER": "tiney-locks",
+    "GC_BLOB_LOCK_BLOB": "expiry-reaper.lock"
+  }
+}
