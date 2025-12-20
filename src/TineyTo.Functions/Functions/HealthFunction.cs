@@ -16,7 +16,7 @@ public class HealthFunction
 
     [Function("Health")]
     public IActionResult Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "api/health")] HttpRequest req)
     {
         _logger.LogInformation("Health check requested");
         return new OkObjectResult(new { status = "ok" });

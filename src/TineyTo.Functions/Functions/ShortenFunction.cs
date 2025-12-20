@@ -43,7 +43,7 @@ public partial class ShortenFunction
 
     [Function("Shorten")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "shorten")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "api/shorten")] HttpRequest req,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing shorten request");
