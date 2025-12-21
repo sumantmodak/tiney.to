@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace TineyTo.Functions.Services;
 
 public interface IUrlValidator
@@ -10,24 +8,16 @@ public interface IUrlValidator
     (bool IsValid, string? Error) ValidateLongUrl(string? url);
 
     /// <summary>
-    /// Validates a custom alias.
-    /// </summary>
-    (bool IsValid, string? Error) ValidateCustomAlias(string? alias);
-
-    /// <summary>
     /// Validates the expires in seconds value.
     /// </summary>
     (bool IsValid, string? Error) ValidateExpiresInSeconds(int? expiresInSeconds);
 }
 
-public partial class UrlValidator : IUrlValidator
+public class UrlValidator : IUrlValidator
 {
     private const int MaxUrlLength = 4096;
     private const int MinTtlSeconds = 60;
     private readonly int _maxTtlSeconds;
-
-    [GeneratedRegex(@"^[A-Za-z0-9_-]{3,32}$")]
-    private static partial Regex AliasRegex();
 
     public UrlValidator()
     {
@@ -55,21 +45,6 @@ public partial class UrlValidator : IUrlValidator
         if (uri.Scheme != "http" && uri.Scheme != "https")
         {
             return (false, "longUrl must use http or https scheme");
-        }
-
-        return (true, null);
-    }
-
-    public (bool IsValid, string? Error) ValidateCustomAlias(string? alias)
-    {
-        if (string.IsNullOrEmpty(alias))
-        {
-            return (true, null); // Custom alias is optional
-        }
-
-        if (!AliasRegex().IsMatch(alias))
-        {
-            return (false, "customAlias must be 3-32 characters and contain only letters, numbers, hyphens, and underscores");
         }
 
         return (true, null);

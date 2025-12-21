@@ -35,8 +35,6 @@ public class ShortenFunctionTests
         // Default to valid validation
         _urlValidatorMock.Setup(v => v.ValidateLongUrl(It.IsAny<string>()))
             .Returns((true, (string?)null));
-        _urlValidatorMock.Setup(v => v.ValidateCustomAlias(It.IsAny<string?>()))
-            .Returns((true, (string?)null));
         _urlValidatorMock.Setup(v => v.ValidateExpiresInSeconds(It.IsAny<int?>()))
             .Returns((true, (string?)null));
 
@@ -104,28 +102,6 @@ public class ShortenFunctionTests
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal(400, badRequest.StatusCode);
-    }
-
-    [Fact]
-    public async Task Run_CustomAliasConflict_Returns409()
-    {
-        // Arrange
-        var request = new ShortenRequest 
-        { 
-            LongUrl = "https://example.com",
-            CustomAlias = "taken"
-        };
-        var httpRequest = CreateRequest(request);
-        
-        _shortUrlRepoMock.Setup(r => r.InsertAsync(It.IsAny<ShortUrlEntity>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false); // Conflict
-
-        // Act
-        var result = await _function.Run(httpRequest, CancellationToken.None);
-
-        // Assert
-        var conflictResult = Assert.IsType<ConflictObjectResult>(result);
-        Assert.Equal(409, conflictResult.StatusCode);
     }
 
     [Fact]

@@ -5,7 +5,6 @@ A serverless URL shortener built with Azure Functions (.NET 8 Isolated Worker) a
 ## Features
 
 - **Shorten URLs** - Generate short aliases for long URLs
-- **Custom Aliases** - Optionally specify your own alias
 - **TTL Support** - Set expiration time for links (default: 30 days)
 - **Automatic Cleanup** - Timer-triggered function removes expired links
 
@@ -58,7 +57,6 @@ Content-Type: application/json
 
 {
   "url": "https://example.com/very/long/url",
-  "customAlias": "myalias",    // optional
   "ttlDays": 7                  // optional, default: 30
 }
 ```

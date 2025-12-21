@@ -71,13 +71,6 @@ public partial class ShortenFunction
             return new BadRequestObjectResult(new { error = longUrlError });
         }
 
-        // Validate custom alias
-        var (aliasValid, aliasError) = _urlValidator.ValidateCustomAlias(request.CustomAlias);
-        if (!aliasValid)
-        {
-            return new BadRequestObjectResult(new { error = aliasError });
-        }
-
         // Validate TTL
         var (ttlValid, ttlError) = _urlValidator.ValidateExpiresInSeconds(request.ExpiresInSeconds);
         if (!ttlValid)
@@ -90,40 +83,23 @@ public partial class ShortenFunction
             ? createdAtUtc.AddSeconds(request.ExpiresInSeconds.Value)
             : null;
 
+        // Generate random alias with retry loop
         string alias;
         ShortUrlEntity entity;
-
-        // Handle custom alias vs random alias
-        if (!string.IsNullOrEmpty(request.CustomAlias))
+        var retries = 0;
+        bool inserted;
+        do
         {
-            alias = request.CustomAlias;
+            alias = _aliasGenerator.Generate();
             entity = ShortUrlEntity.Create(alias, request.LongUrl, createdAtUtc, expiresAtUtc);
+            inserted = await _shortUrlRepository.InsertAsync(entity, cancellationToken);
+            retries++;
+        } while (!inserted && retries < MaxAliasRetries);
 
-            var inserted = await _shortUrlRepository.InsertAsync(entity, cancellationToken);
-            if (!inserted)
-            {
-                _logger.LogWarning("Custom alias {Alias} already exists", alias);
-                return new ConflictObjectResult(new { error = "Alias already taken" });
-            }
-        }
-        else
+        if (!inserted)
         {
-            // Random alias with retry loop
-            var retries = 0;
-            bool inserted;
-            do
-            {
-                alias = _aliasGenerator.Generate();
-                entity = ShortUrlEntity.Create(alias, request.LongUrl, createdAtUtc, expiresAtUtc);
-                inserted = await _shortUrlRepository.InsertAsync(entity, cancellationToken);
-                retries++;
-            } while (!inserted && retries < MaxAliasRetries);
-
-            if (!inserted)
-            {
-                _logger.LogError("Failed to generate unique alias after {Retries} attempts", MaxAliasRetries);
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
-            }
+            _logger.LogError("Failed to generate unique alias after {Retries} attempts", MaxAliasRetries);
+            return new StatusCodeResult(StatusCodes.Status500InternalServerError);
         }
 
         // Insert expiry index if expiring

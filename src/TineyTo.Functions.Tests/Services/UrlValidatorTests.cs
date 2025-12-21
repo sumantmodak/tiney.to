@@ -84,69 +84,6 @@ public class UrlValidatorTests
 
     #endregion
 
-    #region ValidateCustomAlias Tests
-
-    [Fact]
-    public void ValidateCustomAlias_Null_ReturnsValid()
-    {
-        var (isValid, error) = _validator.ValidateCustomAlias(null);
-
-        Assert.True(isValid);
-        Assert.Null(error);
-    }
-
-    [Fact]
-    public void ValidateCustomAlias_Empty_ReturnsValid()
-    {
-        var (isValid, error) = _validator.ValidateCustomAlias("");
-
-        Assert.True(isValid);
-        Assert.Null(error);
-    }
-
-    [Fact]
-    public void ValidateCustomAlias_TooShort_ReturnsInvalid()
-    {
-        var (isValid, error) = _validator.ValidateCustomAlias("ab");
-
-        Assert.False(isValid);
-        Assert.Contains("3-32", error);
-    }
-
-    [Fact]
-    public void ValidateCustomAlias_TooLong_ReturnsInvalid()
-    {
-        var (isValid, error) = _validator.ValidateCustomAlias(new string('a', 33));
-
-        Assert.False(isValid);
-        Assert.Contains("3-32", error);
-    }
-
-    [Fact]
-    public void ValidateCustomAlias_InvalidCharacters_ReturnsInvalid()
-    {
-        var (isValid, error) = _validator.ValidateCustomAlias("my link!");
-
-        Assert.False(isValid);
-        Assert.NotNull(error);
-    }
-
-    [Theory]
-    [InlineData("abc")]
-    [InlineData("my-link")]
-    [InlineData("My_Link_123")]
-    [InlineData("ABC123")]
-    [InlineData("a-b-c")]
-    public void ValidateCustomAlias_ValidAliases_ReturnsValid(string alias)
-    {
-        var (isValid, error) = _validator.ValidateCustomAlias(alias);
-
-        Assert.True(isValid);
-        Assert.Null(error);
-    }
-
-    #endregion
-
     #region ValidateExpiresInSeconds Tests
 
     [Fact]
