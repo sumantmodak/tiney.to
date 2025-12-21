@@ -18,6 +18,7 @@ public class ShortenFunctionTests
     private readonly Mock<ILogger<ShortenFunction>> _loggerMock;
     private readonly Mock<IShortUrlRepository> _shortUrlRepoMock;
     private readonly Mock<IExpiryIndexRepository> _expiryIndexRepoMock;
+    private readonly Mock<IUrlIndexRepository> _urlIndexRepoMock;
     private readonly MockAliasGenerator _aliasGenerator;
     private readonly Mock<IUrlValidator> _urlValidatorMock;
     private readonly MockTimeProvider _timeProvider;
@@ -28,6 +29,7 @@ public class ShortenFunctionTests
         _loggerMock = new Mock<ILogger<ShortenFunction>>();
         _shortUrlRepoMock = new Mock<IShortUrlRepository>();
         _expiryIndexRepoMock = new Mock<IExpiryIndexRepository>();
+        _urlIndexRepoMock = new Mock<IUrlIndexRepository>();
         _aliasGenerator = new MockAliasGenerator();
         _urlValidatorMock = new Mock<IUrlValidator>();
         _timeProvider = new MockTimeProvider();
@@ -42,10 +44,17 @@ public class ShortenFunctionTests
         _shortUrlRepoMock.Setup(r => r.InsertAsync(It.IsAny<ShortUrlEntity>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
+        // Default to no existing URL (no dedup match)
+        _urlIndexRepoMock.Setup(r => r.GetByLongUrlAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UrlIndexEntity?)null);
+        _urlIndexRepoMock.Setup(r => r.InsertAsync(It.IsAny<UrlIndexEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
         _function = new ShortenFunction(
             _loggerMock.Object,
             _shortUrlRepoMock.Object,
             _expiryIndexRepoMock.Object,
+            _urlIndexRepoMock.Object,
             _aliasGenerator,
             _urlValidatorMock.Object,
             _timeProvider);
@@ -148,5 +157,106 @@ public class ShortenFunctionTests
         _expiryIndexRepoMock.Verify(
             r => r.InsertAsync(It.IsAny<ExpiryIndexEntity>(), It.IsAny<CancellationToken>()), 
             Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_ExistingUrl_ReturnsExistingAlias()
+    {
+        // Arrange
+        var now = new DateTimeOffset(2025, 12, 20, 10, 0, 0, TimeSpan.Zero);
+        _timeProvider.UtcNow = now;
+        
+        var existingIndex = UrlIndexEntity.Create("https://example.com", "existing1", now.AddDays(7));
+        _urlIndexRepoMock.Setup(r => r.GetByLongUrlAsync("https://example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingIndex);
+
+        var request = new ShortenRequest { LongUrl = "https://example.com" };
+        var httpRequest = CreateRequest(request);
+
+        // Act
+        var result = await _function.Run(httpRequest, CancellationToken.None);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, okResult.StatusCode);
+        
+        var response = Assert.IsType<ShortenResponse>(okResult.Value);
+        Assert.Equal("existing1", response.Alias);
+        
+        // Should NOT create new short URL
+        _shortUrlRepoMock.Verify(r => r.InsertAsync(It.IsAny<ShortUrlEntity>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_ExistingUrlExpired_CreatesNewAlias()
+    {
+        // Arrange
+        var now = new DateTimeOffset(2025, 12, 20, 10, 0, 0, TimeSpan.Zero);
+        _timeProvider.UtcNow = now;
+        
+        // Existing entry expired yesterday
+        var expiredIndex = UrlIndexEntity.Create("https://example.com", "expired1", now.AddDays(-1));
+        _urlIndexRepoMock.Setup(r => r.GetByLongUrlAsync("https://example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expiredIndex);
+
+        var request = new ShortenRequest { LongUrl = "https://example.com" };
+        var httpRequest = CreateRequest(request);
+        _aliasGenerator.SetNextAlias("newalias");
+
+        // Act
+        var result = await _function.Run(httpRequest, CancellationToken.None);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedResult>(result);
+        var response = Assert.IsType<ShortenResponse>(createdResult.Value);
+        Assert.Equal("newalias", response.Alias);
+        
+        // Should delete expired index and create new short URL
+        _urlIndexRepoMock.Verify(r => r.DeleteAsync("https://example.com", It.IsAny<CancellationToken>()), Times.Once);
+        _shortUrlRepoMock.Verify(r => r.InsertAsync(It.IsAny<ShortUrlEntity>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_ExistingUrlNoExpiry_ReturnsExistingAlias()
+    {
+        // Arrange
+        var now = new DateTimeOffset(2025, 12, 20, 10, 0, 0, TimeSpan.Zero);
+        _timeProvider.UtcNow = now;
+        
+        // Existing entry with no expiry (permanent)
+        var existingIndex = UrlIndexEntity.Create("https://example.com", "permanent", null);
+        _urlIndexRepoMock.Setup(r => r.GetByLongUrlAsync("https://example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingIndex);
+
+        var request = new ShortenRequest { LongUrl = "https://example.com" };
+        var httpRequest = CreateRequest(request);
+
+        // Act
+        var result = await _function.Run(httpRequest, CancellationToken.None);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<ShortenResponse>(okResult.Value);
+        Assert.Equal("permanent", response.Alias);
+    }
+
+    [Fact]
+    public async Task Run_NewUrl_InsertsUrlIndex()
+    {
+        // Arrange
+        var request = new ShortenRequest { LongUrl = "https://newurl.com" };
+        var httpRequest = CreateRequest(request);
+        _aliasGenerator.SetNextAlias("newurl1");
+
+        // Act
+        var result = await _function.Run(httpRequest, CancellationToken.None);
+
+        // Assert
+        Assert.IsType<CreatedResult>(result);
+        _urlIndexRepoMock.Verify(
+            r => r.InsertAsync(It.Is<UrlIndexEntity>(e => 
+                e.Alias == "newurl1" && e.LongUrl == "https://newurl.com"), 
+            It.IsAny<CancellationToken>()), 
+            Times.Once);
     }
 }

@@ -5,7 +5,9 @@ A serverless URL shortener built with Azure Functions (.NET 8 Isolated Worker) a
 ## Features
 
 - **Shorten URLs** - Generate short aliases for long URLs
+- **URL Deduplication** - Same URL always returns the same short link (saves storage)
 - **TTL Support** - Set expiration time for links (default: 30 days)
+- **In-Memory Caching** - Fast redirects with per-instance cache
 - **Automatic Cleanup** - Timer-triggered function removes expired links
 
 ## Project Structure

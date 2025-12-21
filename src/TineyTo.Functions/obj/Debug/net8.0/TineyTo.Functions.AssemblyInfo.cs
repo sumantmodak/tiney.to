@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TineyTo.Functions")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b3dca14b98b3eea2f4af319a316c9fd64acf4e93")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8eb94e6554b74bee502a4f07a1959fa77f917941")]
 [assembly: System.Reflection.AssemblyProductAttribute("TineyTo.Functions")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TineyTo.Functions")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -15,6 +15,7 @@ public partial class ShortenFunction
     private readonly ILogger<ShortenFunction> _logger;
     private readonly IShortUrlRepository _shortUrlRepository;
     private readonly IExpiryIndexRepository _expiryIndexRepository;
+    private readonly IUrlIndexRepository _urlIndexRepository;
     private readonly IAliasGenerator _aliasGenerator;
     private readonly IUrlValidator _urlValidator;
     private readonly ITimeProvider _timeProvider;
@@ -28,6 +29,7 @@ public partial class ShortenFunction
         ILogger<ShortenFunction> logger,
         IShortUrlRepository shortUrlRepository,
         IExpiryIndexRepository expiryIndexRepository,
+        IUrlIndexRepository urlIndexRepository,
         IAliasGenerator aliasGenerator,
         IUrlValidator urlValidator,
         ITimeProvider timeProvider)
@@ -35,6 +37,7 @@ public partial class ShortenFunction
         _logger = logger;
         _shortUrlRepository = shortUrlRepository;
         _expiryIndexRepository = expiryIndexRepository;
+        _urlIndexRepository = urlIndexRepository;
         _aliasGenerator = aliasGenerator;
         _urlValidator = urlValidator;
         _timeProvider = timeProvider;
@@ -83,6 +86,35 @@ public partial class ShortenFunction
             ? createdAtUtc.AddSeconds(request.ExpiresInSeconds.Value)
             : null;
 
+        // Check if URL already exists (deduplication)
+        var existingIndex = await _urlIndexRepository.GetByLongUrlAsync(request.LongUrl, cancellationToken);
+        if (existingIndex != null)
+        {
+            // Check if the existing short URL is still valid (not expired)
+            if (!existingIndex.ExpiresAtUtc.HasValue || existingIndex.ExpiresAtUtc.Value > createdAtUtc)
+            {
+                _logger.LogInformation("Returning existing short URL for: {LongUrl} -> {Alias}", request.LongUrl, existingIndex.Alias);
+                
+                var existingResponse = new ShortenResponse
+                {
+                    Alias = existingIndex.Alias,
+                    ShortUrl = $"{_shortBaseUrl.TrimEnd('/')}/{existingIndex.Alias}",
+                    LongUrl = request.LongUrl,
+                    CreatedAtUtc = createdAtUtc,
+                    ExpiresAtUtc = existingIndex.ExpiresAtUtc
+                };
+
+                // Return 200 OK for existing URL (not 201 Created)
+                return new OkObjectResult(existingResponse);
+            }
+            else
+            {
+                // Expired - clean up the stale index entry
+                _logger.LogDebug("Existing URL index expired, creating new entry");
+                await _urlIndexRepository.DeleteAsync(request.LongUrl, cancellationToken);
+            }
+        }
+
         // Generate random alias with retry loop
         string alias;
         ShortUrlEntity entity;
@@ -116,6 +148,18 @@ public partial class ShortenFunction
                 await _shortUrlRepository.DeleteAsync(alias, cancellationToken);
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
+        }
+
+        // Insert URL index for deduplication (best effort - don't fail if this fails)
+        try
+        {
+            var urlIndexEntity = UrlIndexEntity.Create(request.LongUrl, alias, expiresAtUtc);
+            await _urlIndexRepository.InsertAsync(urlIndexEntity, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Log but don't fail - dedup is optimization, not critical
+            _logger.LogWarning(ex, "Failed to insert URL index for alias {Alias}", alias);
         }
 
         _logger.LogInformation("Created short URL: {Alias} -> {LongUrl}", alias, request.LongUrl);
