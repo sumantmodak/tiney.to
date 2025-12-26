@@ -27,14 +27,14 @@ A serverless URL shortener built with Azure Functions (.NET 8 Isolated Worker) a
 
 ## Overview
 
-**tiney.to** is a high-performance, serverless URL shortening service designed for simplicity, cost-efficiency, and horizontal scalability. It leverages Azure's consumption-based pricing model to minimize operational costs while handling traffic spikes gracefully.
+**tiney.to** is a high-performance, serverless URL shortening service designed for simplicity, cost-efficiency, and horizontal scalability. It leverages Azure's F1 Free Tier for development and can scale to Consumption plan for production workloads.
 
 ### Design Goals
 
 | Goal | Description |
 |------|-------------|
 | **Serverless-First** | Zero infrastructure management, automatic scaling |
-| **Cost-Efficient** | Pay-per-use with Azure Consumption plan |
+| **Cost-Efficient** | F1 Free Tier for dev, pay-per-use Consumption for prod |
 | **Low Latency** | Sub-100ms redirect latency with in-memory caching |
 | **Highly Available** | Leverages Azure's 99.9% SLA for Functions and Storage |
 | **Operationally Simple** | Minimal moving parts, self-healing expiry cleanup |
@@ -73,7 +73,7 @@ A serverless URL shortener built with Azure Functions (.NET 8 Isolated Worker) a
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                     Azure Functions (Consumption Plan)                   │
+│                         Azure Functions (F1 Free Tier)                   │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────┐ │
 │  │ ShortenFunction │  │ RedirectFunction│  │ ExpiredLinkReaperFunction│ │
 │  │   POST /api/    │  │   GET /{alias}  │  │   Timer (every 15 min)   │ │
@@ -680,18 +680,21 @@ curl -I http://localhost:7071/{alias}
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `TABLE_CONNECTION` | Azure Storage connection string | `UseDevelopmentStorage=true` |
+| `AzureWebJobsStorage` | Azure Storage connection (set by Azure) | `UseDevelopmentStorage=true` |
+| `TABLE_CONNECTION` | Azure Storage connection string | Falls back to `AzureWebJobsStorage` |
 | `SHORTURL_TABLE_NAME` | Primary table name | `ShortUrls` |
 | `EXPIRYINDEX_TABLE_NAME` | Expiry index table name | `ShortUrlsExpiryIndex` |
 | `URLINDEX_TABLE_NAME` | URL index table name | `UrlIndex` |
-| `GC_BLOB_LOCK_CONNECTION` | Blob storage connection for locks | `UseDevelopmentStorage=true` |
-| `GC_BLOB_LOCK_CONTAINER` | Blob container for locks | `tiney-locks` |
+| `GC_BLOB_LOCK_CONNECTION` | Blob storage connection for locks | Falls back to `AzureWebJobsStorage` |
+| `GC_BLOB_LOCK_CONTAINER` | Blob container for locks | `locks` |
 | `GC_BLOB_LOCK_BLOB` | Lock blob name | `expiry-reaper.lock` |
-| `SHORT_BASE_URL` | Base URL for short links | `http://localhost:7071` |
-| `ALIAS_LENGTH` | Length of generated aliases | `6` |
+| `BaseUrl` | Base URL for short links | Required in Azure |
+| `DefaultTtlDays` | Default link expiration in days | `30` |
+| `MaxTtlDays` | Maximum allowed TTL in days | `365` |
 | `CACHE_SIZE_MB` | In-memory cache size limit | `50` |
 | `CACHE_DURATION_SECONDS` | Cache entry TTL | `300` |
-| `MAX_TTL_SECONDS` | Maximum allowed TTL | `7776000` (90 days) |
+
+**Note**: In Azure deployments, if `TABLE_CONNECTION` or `GC_BLOB_LOCK_CONNECTION` are not explicitly set, the application will automatically use `AzureWebJobsStorage` for backward compatibility.
 
 ### local.settings.json Example
 
@@ -741,22 +744,74 @@ dotnet test --collect:"XPlat Code Coverage"
 
 ## Deployment
 
-### Deploy to Azure
+### Prerequisites
+
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) installed
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) installed
+- Azure subscription with appropriate permissions
+
+### Build & Package
+
+The deployment process builds for **32-bit (win-x86)** architecture to support the **Azure Functions F1 Free Tier**.
+
+```powershell
+# Build and create deployment package
+cd src/TineyTo.Functions
+dotnet publish --configuration Release --runtime win-x86 --self-contained false --output ..\..\publish
+
+# Create deployment zip
+cd ..\..
+Compress-Archive -Path "publish\*" -DestinationPath "publish.zip" -Force
+```
+
+### Deploy Infrastructure & Application
 
 ```powershell
 cd infra
 
-# Deploy to development
-.\deploy.ps1 -Environment dev -ResourceGroup rg-tiney-dev
+# Deploy to development (F1 Free Tier in Canada Central)
+.\deploy.ps1 -Environment dev -ResourceGroupName rg-tiney-dev
 
 # Deploy to production
-.\deploy.ps1 -Environment prod -ResourceGroup rg-tiney-prod
+.\deploy.ps1 -Environment prod -ResourceGroupName rg-tiney-prod
 ```
+
+The deployment script will:
+1. Create/update Azure resources (Storage Account, Function App, App Insights)
+2. Build the application for 32-bit architecture
+3. Package the deployment
+4. Deploy to Azure Functions
+
+### Manual Deployment (if needed)
+
+```powershell
+# After building the package
+az functionapp deployment source config-zip \
+  --resource-group rg-tiney-dev \
+  --name func-tiney-dev-<uniqueSuffix> \
+  --src publish.zip
+```
+
+### Infrastructure Configuration
+
+The Bicep template (`infra/main.bicep`) configures:
+- **Region**: Canada Central (default)
+- **App Service Plan**: F1 Free Tier (32-bit)
+- **Runtime**: .NET 8 Isolated Worker
+- **Storage**: Standard_LRS with Tables and Blob containers
+- **Monitoring**: Application Insights with Log Analytics
+
+### Important Notes
+
+- **32-bit Architecture**: The F1 Free Tier requires 32-bit builds (`win-x86`)
+- **Connection Strings**: Automatically configured via Bicep deployment
+- **First Deployment**: May take 2-3 minutes for the app to fully start
+- **Storage Tables**: Created automatically on first run
 
 ### CI/CD Pipeline (GitHub Actions)
 
 See `.github/workflows/` for:
-- `build.yml` - Build and test on PR
+- `build.yml` - Build and test on PR (must use win-x86 runtime)
 - `deploy.yml` - Deploy to Azure on merge to main
 
 ---
