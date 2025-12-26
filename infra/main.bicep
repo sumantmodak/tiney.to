@@ -94,13 +94,13 @@ resource locksContainer 'Microsoft.Storage/storageAccounts/blobServices/containe
   }
 }
 
-// App Service Plan (Consumption)
+// App Service Plan (Free tier)
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: appServicePlanName
   location: location
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
+    name: 'F1'
+    tier: 'Free'
   }
   properties: {
     reserved: false // false for Windows
@@ -119,6 +119,7 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
       netFrameworkVersion: 'v8.0'
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
+      use32BitWorkerProcess: true
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
@@ -155,6 +156,30 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'MaxTtlDays'
           value: string(maxTtlDays)
+        }
+        {
+          name: 'TABLE_CONNECTION'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        }
+        {
+          name: 'GC_BLOB_LOCK_CONNECTION'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        }
+        {
+          name: 'GC_BLOB_LOCK_CONTAINER'
+          value: 'locks'
+        }
+        {
+          name: 'SHORTURL_TABLE_NAME'
+          value: 'ShortUrls'
+        }
+        {
+          name: 'EXPIRYINDEX_TABLE_NAME'
+          value: 'ShortUrlsExpiryIndex'
+        }
+        {
+          name: 'URLINDEX_TABLE_NAME'
+          value: 'UrlIndex'
         }
       ]
     }

@@ -16,8 +16,12 @@ var host = new HostBuilder()
         services.ConfigureFunctionsApplicationInsights();
 
         // Configuration
-        var tableConnection = Environment.GetEnvironmentVariable("TABLE_CONNECTION") 
+        // Use AzureWebJobsStorage as fallback (set by Azure Functions)
+        var azureWebJobsStorage = Environment.GetEnvironmentVariable("AzureWebJobsStorage") 
             ?? "UseDevelopmentStorage=true";
+        
+        var tableConnection = Environment.GetEnvironmentVariable("TABLE_CONNECTION") 
+            ?? azureWebJobsStorage;
         var shortUrlTableName = Environment.GetEnvironmentVariable("SHORTURL_TABLE_NAME") 
             ?? "ShortUrls";
         var expiryIndexTableName = Environment.GetEnvironmentVariable("EXPIRYINDEX_TABLE_NAME") 
@@ -25,9 +29,9 @@ var host = new HostBuilder()
         var urlIndexTableName = Environment.GetEnvironmentVariable("URLINDEX_TABLE_NAME") 
             ?? "UrlIndex";
         var gcBlobConnection = Environment.GetEnvironmentVariable("GC_BLOB_LOCK_CONNECTION") 
-            ?? "UseDevelopmentStorage=true";
+            ?? azureWebJobsStorage;
         var gcBlobContainer = Environment.GetEnvironmentVariable("GC_BLOB_LOCK_CONTAINER") 
-            ?? "tiney-locks";
+            ?? "locks";
 
         // Table clients (singleton for connection reuse)
         var tableServiceClient = new TableServiceClient(tableConnection);

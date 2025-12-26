@@ -8,7 +8,7 @@ param(
     [string]$ResourceGroupName,
     
     [Parameter(Mandatory=$false)]
-    [string]$Location = "australiaeast"
+    [string]$Location = "canadacentral"
 )
 
 $ErrorActionPreference = "Stop"
@@ -39,6 +39,8 @@ Write-Host "Building application..." -ForegroundColor Yellow
 $publishPath = "$PSScriptRoot\..\publish"
 dotnet publish "$PSScriptRoot\..\src\TineyTo.Functions\TineyTo.Functions.csproj" `
     --configuration Release `
+    --runtime win-x86 `
+    --self-contained false `
     --output $publishPath
 
 # Create deployment package
