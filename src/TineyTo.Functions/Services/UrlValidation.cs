@@ -41,10 +41,13 @@ public class UrlValidator : IUrlValidator
         {
             return (false, "longUrl must be a valid absolute URL");
         }
-
-        if (uri.Scheme != "http" && uri.Scheme != "https")
+        if (uri.Scheme == "http")
         {
-            return (false, "longUrl must use http or https scheme");
+            return (false, "longUrl must use https scheme");
+        }
+        if (uri.Scheme != "https")
+        {
+            return (false, "longUrl must use https scheme");
         }
 
         return (true, null);
