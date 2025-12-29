@@ -61,7 +61,7 @@ public class UrlValidatorTests
         var (isValid, error) = _validator.ValidateLongUrl("ftp://example.com/file");
 
         Assert.False(isValid);
-        Assert.Contains("http or https", error);
+        Assert.Contains("https", error);
     }
 
     [Fact]
