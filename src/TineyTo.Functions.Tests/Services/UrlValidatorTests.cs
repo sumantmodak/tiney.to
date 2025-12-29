@@ -69,8 +69,8 @@ public class UrlValidatorTests
     {
         var (isValid, error) = _validator.ValidateLongUrl("http://example.com/path");
 
-        Assert.True(isValid);
-        Assert.Null(error);
+        Assert.False(isValid);
+        Assert.NotNull(error);
     }
 
     [Fact]
