@@ -64,20 +64,9 @@ var host = new HostBuilder()
             options.SizeLimit = cacheSizeMb * 1024; // Approximate entries (1KB each)
         });
 
-        // Repositories (with caching decorator)
-        services.AddSingleton<TableShortUrlRepository>(sp => 
+        // Repositories
+        services.AddSingleton<IShortUrlRepository>(sp => 
             new TableShortUrlRepository(shortUrlTable));
-        services.AddSingleton<IShortUrlRepository>(sp =>
-        {
-            var innerRepo = sp.GetRequiredService<TableShortUrlRepository>();
-            var cache = sp.GetRequiredService<IMemoryCache>();
-            var logger = sp.GetRequiredService<ILogger<CachingShortUrlRepository>>();
-            return new CachingShortUrlRepository(
-                innerRepo, 
-                cache, 
-                logger,
-                TimeSpan.FromSeconds(cacheDurationSeconds));
-        });
         services.AddSingleton<IExpiryIndexRepository>(sp => 
             new TableExpiryIndexRepository(expiryIndexTable));
         services.AddSingleton<IUrlIndexRepository>(sp => 
