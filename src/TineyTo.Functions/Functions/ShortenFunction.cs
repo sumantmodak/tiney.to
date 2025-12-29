@@ -20,7 +20,7 @@ public partial class ShortenFunction
     private readonly IUrlValidator _urlValidator;
     private readonly ITimeProvider _timeProvider;
     private readonly string _shortBaseUrl;
-    private const int MaxAliasRetries = 10;
+    private const int MaxAliasRetries = 3;
 
     [GeneratedRegex(@"^[A-Za-z0-9_-]{3,32}$")]
     private static partial Regex AliasFormatRegex();

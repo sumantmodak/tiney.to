@@ -1,5 +1,7 @@
 using Azure;
 using Azure.Data.Tables;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace TineyTo.Functions.Storage.Entities;
 
@@ -28,7 +30,7 @@ public class UrlIndexEntity : ITableEntity
             return "00";
         
         // Use hash code to distribute URLs across partitions (00-99)
-        var hash = Math.Abs(longUrl.GetHashCode());
+        var hash = Math.Abs(BitConverter.ToInt32(MD5.HashData(Encoding.UTF8.GetBytes(longUrl)), 0));
         var partition = (hash % 100).ToString("D2");
         return partition;
     }
