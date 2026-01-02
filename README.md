@@ -35,7 +35,7 @@ A serverless URL shortener built with Azure Functions (.NET 8 Isolated Worker) a
 |------|-------------|
 | **Serverless-First** | Zero infrastructure management, automatic scaling |
 | **Cost-Efficient** | F1 Free Tier for dev, pay-per-use Consumption for prod |
-| **Low Latency** | Sub-100ms redirect latency with in-memory caching |
+| **Low Latency** | Sub-100ms redirect latency with in-memory caching (cache hits <1ms) |
 | **Highly Available** | Leverages Azure's 99.9% SLA for Functions and Storage |
 | **Operationally Simple** | Minimal moving parts, self-healing expiry cleanup |
 
@@ -47,9 +47,10 @@ A serverless URL shortener built with Azure Functions (.NET 8 Isolated Worker) a
 |---------|-------------|
 | **URL Shortening** | Generate random 6-character Base62 aliases for long URLs |
 | **URL Deduplication** | Same URL always returns the same short link (via hash-based lookup) |
-| **Configurable TTL** | Set expiration time (60 seconds to 90 days, configurable) |
-| **In-Memory Caching** | Per-instance LRU cache with configurable size and duration |
-| **Negative Caching** | Cache "not found" results to prevent repeated storage lookups |
+| **Configurable TTL** | Set expiration time (60 seconds to 1 year, configurable) |
+| **In-Memory Caching** | Per-instance LRU cache (15-minute TTL, configurable size) |
+| **Negative Caching** | Cache "not found" results (1-minute TTL) to prevent repeated storage lookups |
+| **Cache Observability** | Structured logging for cache hits, misses, and evictions |
 | **Automatic Cleanup** | Timer-triggered garbage collection removes expired links |
 | **Distributed Locking** | Blob lease-based locking prevents concurrent GC execution |
 | **Health Monitoring** | Health check endpoint for load balancer probes |
@@ -118,7 +119,7 @@ A serverless URL shortener built with Azure Functions (.NET 8 Isolated Worker) a
 | **ShortenFunction** | Creates short URLs, handles deduplication, inserts into all tables |
 | **RedirectFunction** | Resolves aliases to long URLs, serves 302 redirects |
 | **ExpiredLinkReaperFunction** | Cleans up expired entries from all tables |
-| **CachingShortUrlRepository** | Decorator providing in-memory caching for redirects |
+| **CachingShortUrlRepository** | Decorator providing in-memory caching for redirects (15-minute TTL) |
 | **TableShortUrlRepository** | Direct Azure Table Storage access for short URLs |
 | **TableExpiryIndexRepository** | Manages expiry index for efficient GC scans |
 | **TableUrlIndexRepository** | Manages URL deduplication index |
@@ -390,7 +391,7 @@ The `CachingShortUrlRepository` implements a **decorator pattern** to add transp
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Configuration
+### Cache Configuration
 
 | Environment Variable | Default | Description |
 |---------------------|---------|-------------|
@@ -836,9 +837,14 @@ dotnet test --collect:"XPlat Code Coverage"
 | Category | Description |
 |----------|-------------|
 | `Functions/` | HTTP trigger and timer function tests |
-| `Services/` | Business logic tests (validation, alias generation) |
-| `Storage/` | Repository and entity tests |
+| `Services/` | Business logic tests (validation, alias generation, cache metrics) |
+| `Storage/` | Repository tests (including cache behavior and TTL logic) |
 | `Mocks/` | Reusable test doubles |
+
+**Test Coverage:**
+- **68 unit tests** covering all major components
+- **14 cache-specific tests** for hit/miss/eviction scenarios
+- Validates cache TTL calculation, negative caching, and write-through behavior
 
 ---
 
