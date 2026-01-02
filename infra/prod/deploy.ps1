@@ -45,7 +45,11 @@ Write-Host "Creating deployment package..." -ForegroundColor Yellow
 $zipPath = Resolve-Path "$PSScriptRoot/../../publish.zip" -ErrorAction SilentlyContinue
 if ($zipPath -and (Test-Path $zipPath)) { Remove-Item $zipPath -Force }
 $zipPath = Join-Path (Resolve-Path "$PSScriptRoot/../..") "publish.zip"
-Compress-Archive -Path "$publishPath/*" -DestinationPath $zipPath -Force
+
+# Include all files including hidden ones (like .azurefunctions)
+$filesToZip = Get-ChildItem -Path $publishPath -Recurse -Force | Where-Object { !$_.PSIsContainer } | Select-Object -ExpandProperty FullName
+Compress-Archive -Path $filesToZip -DestinationPath $zipPath -Force
+
 Write-Host "Package created: $zipPath ($(((Get-Item $zipPath).Length / 1MB).ToString('0.00')) MB)" -ForegroundColor Green
 
 # Deploy to Azure
@@ -69,4 +73,4 @@ Remove-Item $zipPath -Force
 
 Write-Host ""
 Write-Host "Deployment complete!" -ForegroundColor Green
-Write-Host "Function App URL: https://$functionAppName.azurewebsites.net" -ForegroundColor Cyan
+Write-Host "Function App URL: https://$functionAppName.azurewebsites.net/api/health" -ForegroundColor Cyan
