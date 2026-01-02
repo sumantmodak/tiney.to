@@ -26,7 +26,7 @@ param cacheDurationSeconds int = 900
 param cacheNegativeSeconds int = 60
 
 var uniqueSuffix = environmentName == 'prod' ? '783f57bd' : '549adabd'
-var storageAccountName = 'storage-tiney-${environmentName}-${uniqueSuffix}'
+var storageAccountName = 'storagetiney${environmentName}${uniqueSuffix}'
 var functionAppName = 'func-tiney-${environmentName}-${uniqueSuffix}'
 var appServicePlanName = 'asp-tiney-${environmentName}-${uniqueSuffix}'
 var appInsightsName = 'appi-tiney-${environmentName}-${uniqueSuffix}'
@@ -106,13 +106,13 @@ resource locksContainer 'Microsoft.Storage/storageAccounts/blobServices/containe
   }
 }
 
-// App Service Plan (Free tier)
+// App Service Plan (Consumption/Dynamic tier for Functions)
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: appServicePlanName
   location: location
   sku: {
-    name: 'F1'
-    tier: 'Free'
+    name: 'Y1'
+    tier: 'Dynamic'
   }
   properties: {
     reserved: false // false for Windows

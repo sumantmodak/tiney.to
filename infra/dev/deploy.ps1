@@ -23,8 +23,8 @@ if (-not $rg) {
 Write-Host "Deploying infrastructure..." -ForegroundColor Yellow
 $deployment = az deployment group create `
     --resource-group $ResourceGroupName `
-    --template-file "$PSScriptRoot\main.bicep" `
-    --parameters "$PSScriptRoot\parameters.json" `
+    --template-file "$PSScriptRoot/main.bicep" `
+    --parameters "$PSScriptRoot/parameters.json" `
     --query "properties.outputs" `
     --output json | ConvertFrom-Json
 
@@ -33,8 +33,8 @@ Write-Host "Function App: $functionAppName" -ForegroundColor Green
 
 # Build and publish the Functions app
 Write-Host "Building application..." -ForegroundColor Yellow
-$publishPath = "$PSScriptRoot\..\..\publish"
-dotnet publish "$PSScriptRoot\..\..\src\TineyTo.Functions\TineyTo.Functions.csproj" `
+$publishPath = "$PSScriptRoot/../../publish"
+dotnet publish "$PSScriptRoot/../../src/TineyTo.Functions/TineyTo.Functions.csproj" `
     --configuration Release `
     --runtime win-x86 `
     --self-contained false `
@@ -42,16 +42,26 @@ dotnet publish "$PSScriptRoot\..\..\src\TineyTo.Functions\TineyTo.Functions.cspr
 
 # Create deployment package
 Write-Host "Creating deployment package..." -ForegroundColor Yellow
-$zipPath = "$PSScriptRoot\..\..\publish.zip"
-if (Test-Path $zipPath) { Remove-Item $zipPath }
-Compress-Archive -Path "$publishPath\*" -DestinationPath $zipPath
+$zipPath = Resolve-Path "$PSScriptRoot/../../publish.zip" -ErrorAction SilentlyContinue
+if ($zipPath -and (Test-Path $zipPath)) { Remove-Item $zipPath -Force }
+$zipPath = Join-Path (Resolve-Path "$PSScriptRoot/../..") "publish.zip"
+Compress-Archive -Path "$publishPath/*" -DestinationPath $zipPath -Force
+Write-Host "Package created: $zipPath ($(((Get-Item $zipPath).Length / 1MB).ToString('0.00')) MB)" -ForegroundColor Green
 
 # Deploy to Azure
 Write-Host "Deploying to Azure Functions..." -ForegroundColor Yellow
-az functionapp deployment source config-zip `
+$deployResult = az functionapp deployment source config-zip `
     --resource-group $ResourceGroupName `
     --name $functionAppName `
-    --src $zipPath
+    --src $zipPath `
+    2>&1
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Deployment failed: $deployResult" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Deployment completed successfully" -ForegroundColor Green
 
 # Cleanup
 Remove-Item $publishPath -Recurse -Force
