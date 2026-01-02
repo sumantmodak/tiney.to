@@ -5,6 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using TineyTo.Functions.Configuration;
 using TineyTo.Functions.Services;
 using TineyTo.Functions.Storage;
 
@@ -53,20 +54,30 @@ var host = new HostBuilder()
         containerClient.CreateIfNotExists();
         services.AddSingleton(containerClient);
 
-        // In-memory cache for frequently accessed URLs
-        var cacheSizeMb = int.TryParse(
-            Environment.GetEnvironmentVariable("CACHE_SIZE_MB"), out var size) ? size : 50;
-        var cacheDurationSeconds = int.TryParse(
-            Environment.GetEnvironmentVariable("CACHE_DURATION_SECONDS"), out var duration) ? duration : 300;
+        // Cache configuration
+        var cacheConfig = CacheConfiguration.LoadFromEnvironment();
+        services.AddSingleton(cacheConfig);
         
         services.AddMemoryCache(options =>
         {
-            options.SizeLimit = cacheSizeMb * 1024; // Approximate entries (1KB each)
+            options.SizeLimit = cacheConfig.SizeLimitMb * 1024; // Approximate entries (1KB each)
         });
 
-        // Repositories
-        services.AddSingleton<IShortUrlRepository>(sp => 
-            new TableShortUrlRepository(shortUrlTable));
+        // Repositories - wrap with caching decorator if enabled
+        services.AddSingleton<IShortUrlRepository>(sp =>
+        {
+            var inner = new TableShortUrlRepository(shortUrlTable);
+            if (cacheConfig.IsEnabled)
+            {
+                return new CachingShortUrlRepository(
+                    inner,
+                    sp.GetRequiredService<IMemoryCache>(),
+                    cacheConfig,
+                    sp.GetRequiredService<ITimeProvider>(),
+                    sp.GetRequiredService<ICacheMetrics>());
+            }
+            return inner;
+        });
         services.AddSingleton<IExpiryIndexRepository>(sp => 
             new TableExpiryIndexRepository(expiryIndexTable));
         services.AddSingleton<IUrlIndexRepository>(sp => 
@@ -76,6 +87,7 @@ var host = new HostBuilder()
         services.AddSingleton<IAliasGenerator, AliasGenerator>();
         services.AddSingleton<IUrlValidator, UrlValidator>();
         services.AddSingleton<ITimeProvider, SystemTimeProvider>();
+        services.AddSingleton<ICacheMetrics, LoggingCacheMetrics>();
     })
     .Build();
 

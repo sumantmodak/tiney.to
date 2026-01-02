@@ -15,6 +15,10 @@
     "GC_BLOB_LOCK_CONNECTION": "UseDevelopmentStorage=true",
     "GC_BLOB_LOCK_CONTAINER": "locks",
     "GC_BLOB_LOCK_BLOB": "expiry-reaper.lock",
-    "SHORT_BASE_URL": "http://localhost:7071"
+    "SHORT_BASE_URL": "http://localhost:7071",
+    "CACHE_ENABLED": "true",
+    "CACHE_SIZE_MB": "10",
+    "CACHE_DURATION_SECONDS": "900",
+    "CACHE_NEGATIVE_SECONDS": "60"
   }
 }

@@ -66,7 +66,7 @@ public class CachingShortUrlRepositoryTests
         Assert.NotNull(result);
         Assert.Equal("https://example.com", result.LongUrl);
         _innerRepoMock.Verify(r => r.GetByAliasAsync(alias, It.IsAny<CancellationToken>()), Times.Once);
-        _metricsMock.Verify(m => m.RecordMiss("GetByAlias"), Times.Once);
+        _metricsMock.Verify(m => m.RecordMiss("GetByAlias", It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class CachingShortUrlRepositoryTests
         Assert.NotNull(result);
         Assert.Equal("https://example.com", result.LongUrl);
         _innerRepoMock.Verify(r => r.GetByAliasAsync(alias, It.IsAny<CancellationToken>()), Times.Once);
-        _metricsMock.Verify(m => m.RecordHit("GetByAlias"), Times.Once);
+        _metricsMock.Verify(m => m.RecordHit("GetByAlias", It.IsAny<string>(), It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
@@ -128,8 +128,9 @@ public class CachingShortUrlRepositoryTests
         // Assert
         Assert.NotNull(result2);
         Assert.True(result2.IsExpired(futureTime)); // Now expired
-        _metricsMock.Verify(m => m.RecordHit("GetByAlias"), Times.Once);
-        _metricsMock.Verify(m => m.RecordEviction(It.IsAny<string>()), Times.Once);
+        // First call is a miss, second call finds it in cache but then evicts
+        _metricsMock.Verify(m => m.RecordMiss("GetByAlias", It.IsAny<string>()), Times.Once);
+        _metricsMock.Verify(m => m.RecordEviction(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         // Only one DB call - expired entities are returned from cache before eviction
         _innerRepoMock.Verify(r => r.GetByAliasAsync(alias, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -165,8 +166,9 @@ public class CachingShortUrlRepositoryTests
         // Assert
         Assert.NotNull(result2);
         Assert.True(result2.IsDisabled);
-        _metricsMock.Verify(m => m.RecordHit("GetByAlias"), Times.Once);
-        _metricsMock.Verify(m => m.RecordEviction(It.IsAny<string>()), Times.Once);
+        // First call is a miss, second call finds it but then evicts
+        _metricsMock.Verify(m => m.RecordMiss("GetByAlias", It.IsAny<string>()), Times.Once);
+        _metricsMock.Verify(m => m.RecordEviction(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         // Only one DB call - disabled entities are returned from cache before eviction
         _innerRepoMock.Verify(r => r.GetByAliasAsync(alias, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -196,8 +198,8 @@ public class CachingShortUrlRepositoryTests
         Assert.NotNull(result2);
         Assert.NotNull(result3);
         _innerRepoMock.Verify(r => r.GetByAliasAsync(alias, It.IsAny<CancellationToken>()), Times.Once);
-        _metricsMock.Verify(m => m.RecordMiss("GetByAlias"), Times.Once);
-        _metricsMock.Verify(m => m.RecordHit("GetByAlias"), Times.Exactly(2));
+        _metricsMock.Verify(m => m.RecordMiss("GetByAlias", It.IsAny<string>()), Times.Once);
+        _metricsMock.Verify(m => m.RecordHit("GetByAlias", It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(2));
     }
 
     #endregion
@@ -279,14 +281,14 @@ public class CachingShortUrlRepositoryTests
 
         // Act - Cache the entity
         await _repository.GetByAliasAsync(alias);
-        _metricsMock.Verify(m => m.RecordMiss("GetByAlias"), Times.Once);
+        _metricsMock.Verify(m => m.RecordMiss("GetByAlias", It.IsAny<string>()), Times.Once);
 
         // Act - Delete it
         var deleteResult = await _repository.DeleteAsync(alias);
 
         // Assert
         Assert.True(deleteResult);
-        _metricsMock.Verify(m => m.RecordEviction(It.IsAny<string>()), Times.Once);
+        _metricsMock.Verify(m => m.RecordEviction(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         _innerRepoMock.Verify(r => r.DeleteAsync(alias, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -339,8 +341,8 @@ public class CachingShortUrlRepositoryTests
         Assert.Null(result1);
         Assert.Null(result2);
         _innerRepoMock.Verify(r => r.GetByAliasAsync(alias, It.IsAny<CancellationToken>()), Times.Once);
-        _metricsMock.Verify(m => m.RecordMiss("GetByAlias"), Times.Once);
-        _metricsMock.Verify(m => m.RecordHit("GetByAlias"), Times.Once);
+        _metricsMock.Verify(m => m.RecordMiss("GetByAlias", It.IsAny<string>()), Times.Once);
+        _metricsMock.Verify(m => m.RecordHit("GetByAlias", It.IsAny<string>(), null), Times.Once);
     }
 
     [Fact]
@@ -360,8 +362,8 @@ public class CachingShortUrlRepositoryTests
 
         // Assert - Only one DB call
         _innerRepoMock.Verify(r => r.GetByAliasAsync(alias, It.IsAny<CancellationToken>()), Times.Once);
-        _metricsMock.Verify(m => m.RecordMiss("GetByAlias"), Times.Once);
-        _metricsMock.Verify(m => m.RecordHit("GetByAlias"), Times.Exactly(2));
+        _metricsMock.Verify(m => m.RecordMiss("GetByAlias", It.IsAny<string>()), Times.Once);
+        _metricsMock.Verify(m => m.RecordHit("GetByAlias", It.IsAny<string>(), null), Times.Exactly(2));
     }
 
     [Fact]

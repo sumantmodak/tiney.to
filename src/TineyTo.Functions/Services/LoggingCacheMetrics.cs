@@ -14,18 +14,39 @@ public class LoggingCacheMetrics : ICacheMetrics
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public void RecordHit(string operation)
+    public void RecordHit(string operation, string? alias = null, string? longUrl = null)
     {
-        _logger.LogDebug("Cache HIT: {Operation}", operation);
+        if (!string.IsNullOrEmpty(alias) && !string.IsNullOrEmpty(longUrl))
+        {
+            _logger.LogInformation("Cache HIT: {Operation}, Alias: {Alias}, LongUrl: {LongUrl}", operation, alias, longUrl);
+        }
+        else
+        {
+            _logger.LogInformation("Cache HIT: {Operation}", operation);
+        }
     }
 
-    public void RecordMiss(string operation)
+    public void RecordMiss(string operation, string? alias = null)
     {
-        _logger.LogDebug("Cache MISS: {Operation}", operation);
+        if (!string.IsNullOrEmpty(alias))
+        {
+            _logger.LogInformation("Cache MISS: {Operation}, Alias: {Alias}", operation, alias);
+        }
+        else
+        {
+            _logger.LogInformation("Cache MISS: {Operation}", operation);
+        }
     }
 
-    public void RecordEviction(string key)
+    public void RecordEviction(string key, string? alias = null)
     {
-        _logger.LogDebug("Cache EVICTION: {Key}", key);
+        if (!string.IsNullOrEmpty(alias))
+        {
+            _logger.LogInformation("Cache EVICTION: {Key}, Alias: {Alias}", key, alias);
+        }
+        else
+        {
+            _logger.LogInformation("Cache EVICTION: {Key}", key);
+        }
     }
 }

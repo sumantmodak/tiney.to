@@ -45,11 +45,10 @@ public class CachingShortUrlRepository : IShortUrlRepository
         // Try to get from cache
         if (_cache.TryGetValue<object>(cacheKey, out var cachedValue))
         {
-            _metrics.RecordHit("GetByAlias");
-
             // Check for negative cache (404)
             if (cachedValue is string s && s == NegativeCacheValue)
             {
+                _metrics.RecordHit("GetByAlias", alias);
                 return null;
             }
 
@@ -63,18 +62,19 @@ public class CachingShortUrlRepository : IShortUrlRepository
                 {
                     // Entity is stale, evict from cache
                     _cache.Remove(cacheKey);
-                    _metrics.RecordEviction(cacheKey);
+                    _metrics.RecordEviction(cacheKey, alias);
                     
                     // Return appropriate result
                     return entity;
                 }
 
+                _metrics.RecordHit("GetByAlias", alias, entity.LongUrl);
                 return entity;
             }
         }
 
         // Cache miss - load from database
-        _metrics.RecordMiss("GetByAlias");
+        _metrics.RecordMiss("GetByAlias", alias);
         var result = await _inner.GetByAliasAsync(alias, cancellationToken);
 
         if (result == null)
@@ -148,7 +148,7 @@ public class CachingShortUrlRepository : IShortUrlRepository
 
         // Evict from cache proactively
         _cache.Remove(cacheKey);
-        _metrics.RecordEviction(cacheKey);
+        _metrics.RecordEviction(cacheKey, alias);
 
         // Delete from database
         return await _inner.DeleteAsync(alias, cancellationToken);
