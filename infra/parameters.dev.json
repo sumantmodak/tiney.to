@@ -6,13 +6,25 @@
       "value": "dev"
     },
     "baseUrl": {
-      "value": "https://tiney-dev.azurewebsites.net"
+      "value": "https://func-tiney-dev-549adabd.azurewebsites.net"
     },
-    "defaultTtlDays": {
-      "value": 7
+    "aliasLength": {
+      "value": 6
     },
-    "maxTtlDays": {
-      "value": 30
+    "maxTtlSeconds": {
+      "value": 2592000
+    },
+    "cacheEnabled": {
+      "value": true
+    },
+    "cacheSizeMb": {
+      "value": 10
+    },
+    "cacheDurationSeconds": {
+      "value": 900
+    },
+    "cacheNegativeSeconds": {
+      "value": 60
     }
   }
 }

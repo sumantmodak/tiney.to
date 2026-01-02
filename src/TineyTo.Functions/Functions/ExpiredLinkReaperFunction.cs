@@ -2,6 +2,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Specialized;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using TineyTo.Functions.Configuration;
 using TineyTo.Functions.Services;
 using TineyTo.Functions.Storage;
 using TineyTo.Functions.Storage.Entities;
@@ -23,14 +24,15 @@ public class ExpiredLinkReaperFunction
         IShortUrlRepository shortUrlRepository,
         IExpiryIndexRepository expiryIndexRepository,
         BlobContainerClient blobContainerClient,
-        ITimeProvider timeProvider)
+        ITimeProvider timeProvider,
+        StorageConfiguration config)
     {
         _logger = logger;
         _shortUrlRepository = shortUrlRepository;
         _expiryIndexRepository = expiryIndexRepository;
         _blobContainerClient = blobContainerClient;
         _timeProvider = timeProvider;
-        _lockBlobName = Environment.GetEnvironmentVariable("GC_BLOB_LOCK_BLOB") ?? "expiry-reaper.lock";
+        _lockBlobName = config.GcBlobLockBlob;
     }
 
     [Function("ExpiredLinkReaper")]

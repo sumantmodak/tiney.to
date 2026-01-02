@@ -16,47 +16,35 @@ var host = new HostBuilder()
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
 
-        // Configuration
-        // Use AzureWebJobsStorage as fallback (set by Azure Functions)
-        var azureWebJobsStorage = Environment.GetEnvironmentVariable("AzureWebJobsStorage") 
-            ?? "UseDevelopmentStorage=true";
+        // Load all configurations from environment
+        var appConfig = ApplicationConfiguration.LoadFromEnvironment();
+        var storageConfig = StorageConfiguration.LoadFromEnvironment();
+        var cacheConfig = CacheConfiguration.LoadFromEnvironment();
         
-        var tableConnection = Environment.GetEnvironmentVariable("TABLE_CONNECTION") 
-            ?? azureWebJobsStorage;
-        var shortUrlTableName = Environment.GetEnvironmentVariable("SHORTURL_TABLE_NAME") 
-            ?? "ShortUrls";
-        var expiryIndexTableName = Environment.GetEnvironmentVariable("EXPIRYINDEX_TABLE_NAME") 
-            ?? "ShortUrlsExpiryIndex";
-        var urlIndexTableName = Environment.GetEnvironmentVariable("URLINDEX_TABLE_NAME") 
-            ?? "UrlIndex";
-        var gcBlobConnection = Environment.GetEnvironmentVariable("GC_BLOB_LOCK_CONNECTION") 
-            ?? azureWebJobsStorage;
-        var gcBlobContainer = Environment.GetEnvironmentVariable("GC_BLOB_LOCK_CONTAINER") 
-            ?? "locks";
+        // Register configurations as singletons
+        services.AddSingleton(appConfig);
+        services.AddSingleton(storageConfig);
+        services.AddSingleton(cacheConfig);
 
         // Table clients (singleton for connection reuse)
-        var tableServiceClient = new TableServiceClient(tableConnection);
+        var tableServiceClient = new TableServiceClient(storageConfig.TableConnection);
         
-        var shortUrlTable = tableServiceClient.GetTableClient(shortUrlTableName);
+        var shortUrlTable = tableServiceClient.GetTableClient(storageConfig.ShortUrlTableName);
         shortUrlTable.CreateIfNotExists();
         services.AddSingleton(shortUrlTable);
 
-        var expiryIndexTable = tableServiceClient.GetTableClient(expiryIndexTableName);
+        var expiryIndexTable = tableServiceClient.GetTableClient(storageConfig.ExpiryIndexTableName);
         expiryIndexTable.CreateIfNotExists();
         services.AddSingleton<TableClient>(sp => expiryIndexTable);
 
-        var urlIndexTable = tableServiceClient.GetTableClient(urlIndexTableName);
+        var urlIndexTable = tableServiceClient.GetTableClient(storageConfig.UrlIndexTableName);
         urlIndexTable.CreateIfNotExists();
 
         // Blob client for GC locking
-        var blobServiceClient = new BlobServiceClient(gcBlobConnection);
-        var containerClient = blobServiceClient.GetBlobContainerClient(gcBlobContainer);
+        var blobServiceClient = new BlobServiceClient(storageConfig.GcBlobLockConnection);
+        var containerClient = blobServiceClient.GetBlobContainerClient(storageConfig.GcBlobLockContainer);
         containerClient.CreateIfNotExists();
         services.AddSingleton(containerClient);
-
-        // Cache configuration
-        var cacheConfig = CacheConfiguration.LoadFromEnvironment();
-        services.AddSingleton(cacheConfig);
         
         services.AddMemoryCache(options =>
         {

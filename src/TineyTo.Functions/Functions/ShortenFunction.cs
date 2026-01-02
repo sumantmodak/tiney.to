@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using TineyTo.Functions.Configuration;
 using TineyTo.Functions.Models;
 using TineyTo.Functions.Services;
 using TineyTo.Functions.Storage;
@@ -21,6 +23,7 @@ public partial class ShortenFunction
     private readonly ITimeProvider _timeProvider;
     private readonly string _shortBaseUrl;
     private const int MaxAliasRetries = 3;
+    private readonly int _maxTtlSeconds;
 
     [GeneratedRegex(@"^[A-Za-z0-9_-]{3,32}$")]
     private static partial Regex AliasFormatRegex();
@@ -32,7 +35,8 @@ public partial class ShortenFunction
         IUrlIndexRepository urlIndexRepository,
         IAliasGenerator aliasGenerator,
         IUrlValidator urlValidator,
-        ITimeProvider timeProvider)
+        ITimeProvider timeProvider,
+        ApplicationConfiguration config)
     {
         _logger = logger;
         _shortUrlRepository = shortUrlRepository;
@@ -41,7 +45,8 @@ public partial class ShortenFunction
         _aliasGenerator = aliasGenerator;
         _urlValidator = urlValidator;
         _timeProvider = timeProvider;
-        _shortBaseUrl = Environment.GetEnvironmentVariable("SHORT_BASE_URL") ?? "http://localhost:7071";
+        _shortBaseUrl = config.BaseUrl;
+        _maxTtlSeconds = config.MaxTtlSeconds;
     }
 
     [Function("Shorten")]
@@ -84,7 +89,7 @@ public partial class ShortenFunction
         var createdAtUtc = _timeProvider.UtcNow;
         DateTimeOffset? expiresAtUtc = request.ExpiresInSeconds.HasValue
             ? createdAtUtc.AddSeconds(request.ExpiresInSeconds.Value)
-            : null;
+            : createdAtUtc.AddSeconds(_maxTtlSeconds);
 
         // Check if URL already exists (deduplication)
         var existingIndex = await _urlIndexRepository.GetByLongUrlAsync(request.LongUrl, cancellationToken);

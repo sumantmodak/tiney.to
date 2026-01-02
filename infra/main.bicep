@@ -7,18 +7,30 @@ param environmentName string = 'prod'
 @description('Base URL for short links (e.g., https://tiney.to)')
 param baseUrl string
 
-@description('Default TTL in days for shortened URLs')
-param defaultTtlDays int = 30
+@description('Length of generated aliases')
+param aliasLength int = 6
 
-@description('Maximum TTL in days allowed')
-param maxTtlDays int = 365
+@description('Maximum TTL in seconds for shortened URLs (default: 7776000 = 90 days)')
+param maxTtlSeconds int = 7776000
 
-var uniqueSuffix = uniqueString(resourceGroup().id)
-var storageAccountName = 'sttiney${uniqueSuffix}'
+@description('Enable in-memory caching')
+param cacheEnabled bool = true
+
+@description('Cache size limit in MB')
+param cacheSizeMb int = 10
+
+@description('Default cache duration in seconds (15 minutes)')
+param cacheDurationSeconds int = 900
+
+@description('Negative cache duration in seconds (1 minute)')
+param cacheNegativeSeconds int = 60
+
+var uniqueSuffix = environmentName == 'prod' ? '783f57bd' : '549adabd'
+var storageAccountName = 'storage-tiney-${environmentName}-${uniqueSuffix}'
 var functionAppName = 'func-tiney-${environmentName}-${uniqueSuffix}'
-var appServicePlanName = 'asp-tiney-${environmentName}'
-var appInsightsName = 'appi-tiney-${environmentName}'
-var logAnalyticsName = 'log-tiney-${environmentName}'
+var appServicePlanName = 'asp-tiney-${environmentName}-${uniqueSuffix}'
+var appInsightsName = 'appi-tiney-${environmentName}-${uniqueSuffix}'
+var logAnalyticsName = 'log-tiney-${environmentName}-${uniqueSuffix}'
 
 // Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
@@ -146,28 +158,20 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
           value: appInsights.properties.ConnectionString
         }
         {
-          name: 'BaseUrl'
+          name: 'SHORT_BASE_URL'
           value: baseUrl
         }
         {
-          name: 'DefaultTtlDays'
-          value: string(defaultTtlDays)
+          name: 'ALIAS_LENGTH'
+          value: string(aliasLength)
         }
         {
-          name: 'MaxTtlDays'
-          value: string(maxTtlDays)
+          name: 'MAX_TTL_SECONDS'
+          value: string(maxTtlSeconds)
         }
         {
           name: 'TABLE_CONNECTION'
           value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-        }
-        {
-          name: 'GC_BLOB_LOCK_CONNECTION'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-        }
-        {
-          name: 'GC_BLOB_LOCK_CONTAINER'
-          value: 'locks'
         }
         {
           name: 'SHORTURL_TABLE_NAME'
@@ -180,6 +184,34 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'URLINDEX_TABLE_NAME'
           value: 'UrlIndex'
+        }
+        {
+          name: 'GC_BLOB_LOCK_CONNECTION'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        }
+        {
+          name: 'GC_BLOB_LOCK_CONTAINER'
+          value: 'locks'
+        }
+        {
+          name: 'GC_BLOB_LOCK_BLOB'
+          value: 'expiry-reaper.lock'
+        }
+        {
+          name: 'CACHE_ENABLED'
+          value: string(cacheEnabled)
+        }
+        {
+          name: 'CACHE_SIZE_MB'
+          value: string(cacheSizeMb)
+        }
+        {
+          name: 'CACHE_DURATION_SECONDS'
+          value: string(cacheDurationSeconds)
+        }
+        {
+          name: 'CACHE_NEGATIVE_SECONDS'
+          value: string(cacheNegativeSeconds)
         }
       ]
     }

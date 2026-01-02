@@ -1,3 +1,5 @@
+using TineyTo.Functions.Configuration;
+
 namespace TineyTo.Functions.Services;
 
 public interface IUrlValidator
@@ -19,10 +21,9 @@ public class UrlValidator : IUrlValidator
     private const int MinTtlSeconds = 60;
     private readonly int _maxTtlSeconds;
 
-    public UrlValidator()
+    public UrlValidator(ApplicationConfiguration config)
     {
-        var maxTtlStr = Environment.GetEnvironmentVariable("MAX_TTL_SECONDS") ?? "7776000";
-        _maxTtlSeconds = int.TryParse(maxTtlStr, out var maxTtl) ? maxTtl : 7776000; // 90 days
+        _maxTtlSeconds = config.MaxTtlSeconds;
     }
 
     public (bool IsValid, string? Error) ValidateLongUrl(string? url)

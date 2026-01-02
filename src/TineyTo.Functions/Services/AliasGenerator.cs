@@ -1,3 +1,5 @@
+using TineyTo.Functions.Configuration;
+
 namespace TineyTo.Functions.Services;
 
 public interface IAliasGenerator
@@ -14,10 +16,9 @@ public class AliasGenerator : IAliasGenerator
     private readonly int _aliasLength;
     private readonly Random _random;
 
-    public AliasGenerator()
+    public AliasGenerator(ApplicationConfiguration config)
     {
-        var aliasLengthStr = Environment.GetEnvironmentVariable("ALIAS_LENGTH") ?? "6";
-        _aliasLength = int.TryParse(aliasLengthStr, out var length) ? length : 6;
+        _aliasLength = config.AliasLength;
         _random = Random.Shared;
     }
 
