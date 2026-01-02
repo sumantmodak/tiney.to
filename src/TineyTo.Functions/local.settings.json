@@ -6,11 +6,15 @@
     "TABLE_CONNECTION": "UseDevelopmentStorage=true",
     "SHORTURL_TABLE_NAME": "ShortUrls",
     "EXPIRYINDEX_TABLE_NAME": "ShortUrlsExpiryIndex",
-    "SHORT_BASE_URL": "http://localhost:7071",
+    "URLINDEX_TABLE_NAME": "UrlIndex",
+    "BaseUrl": "http://localhost:7071",
+    "DefaultTtlDays": "30",
+    "MaxTtlDays": "365",
     "ALIAS_LENGTH": "6",
     "MAX_TTL_SECONDS": "7776000",
     "GC_BLOB_LOCK_CONNECTION": "UseDevelopmentStorage=true",
-    "GC_BLOB_LOCK_CONTAINER": "tiney-locks",
-    "GC_BLOB_LOCK_BLOB": "expiry-reaper.lock"
+    "GC_BLOB_LOCK_CONTAINER": "locks",
+    "GC_BLOB_LOCK_BLOB": "expiry-reaper.lock",
+    "SHORT_BASE_URL": "http://localhost:7071"
   }
 }

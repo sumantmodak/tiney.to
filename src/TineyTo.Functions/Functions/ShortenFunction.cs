@@ -50,7 +50,7 @@ public partial class ShortenFunction
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing shorten request");
-
+        
         ShortenRequest? request;
         try
         {
@@ -60,7 +60,7 @@ public partial class ShortenFunction
         {
             _logger.LogWarning(ex, "Failed to parse request body");
             return new BadRequestObjectResult(new { error = "Invalid request body" });
-        }
+        }   
 
         if (request == null)
         {

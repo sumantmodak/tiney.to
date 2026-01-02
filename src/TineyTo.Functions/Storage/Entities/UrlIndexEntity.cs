@@ -22,7 +22,7 @@ public class UrlIndexEntity : ITableEntity
 
     /// <summary>
     /// Computes a partition key from a long URL.
-    /// Uses a simple hash to distribute URLs across partitions.
+    /// Uses a MD5 stable hash to distribute URLs across partitions. D2 takes the first two digits (00-99).
     /// </summary>
     public static string ComputePartitionKey(string longUrl)
     {
@@ -36,18 +36,36 @@ public class UrlIndexEntity : ITableEntity
     }
 
     /// <summary>
+    /// Computes a SHA256 hash of the URL to use as RowKey.
+    /// </summary>
+    public static string ComputeRowKey(string longUrl)
+    {
+        if (string.IsNullOrEmpty(longUrl))
+            return string.Empty;
+        
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(longUrl));
+        return Convert.ToHexString(hash);
+    }
+
+    public static (string, string) ComputePartitionAndRowKey(string longUrl)
+    {
+        return (ComputePartitionKey(longUrl), ComputeRowKey(longUrl));
+    }
+
+    /// <summary>
     /// Creates a new UrlIndexEntity from the provided parameters.
-    /// The RowKey is the full long URL for direct lookup.
+    /// The RowKey is a SHA256 hash of the URL to stay within size limits.
     /// </summary>
     public static UrlIndexEntity Create(
         string longUrl,
         string alias,
         DateTimeOffset? expiresAtUtc = null)
     {
+        var (pkey, rkey) = ComputePartitionAndRowKey(longUrl);
         return new UrlIndexEntity
         {
-            PartitionKey = ComputePartitionKey(longUrl),
-            RowKey = longUrl,
+            PartitionKey = pkey,
+            RowKey = rkey,
             LongUrl = longUrl,
             Alias = alias,
             ExpiresAtUtc = expiresAtUtc

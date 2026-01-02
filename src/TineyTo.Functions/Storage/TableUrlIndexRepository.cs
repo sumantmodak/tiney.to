@@ -17,14 +17,13 @@ public class TableUrlIndexRepository : IUrlIndexRepository
     {
         if (string.IsNullOrEmpty(longUrl))
             throw new ArgumentException("Long URL cannot be null or empty", nameof(longUrl));
-
-        var partitionKey = UrlIndexEntity.ComputePartitionKey(longUrl);
-
+        
+        var (partitionKey, rowKey) = UrlIndexEntity.ComputePartitionAndRowKey(longUrl);
         try
         {
             var response = await _tableClient.GetEntityAsync<UrlIndexEntity>(
                 partitionKey,
-                longUrl,
+                rowKey,
                 cancellationToken: cancellationToken);
             
             return response.Value;
@@ -58,12 +57,13 @@ public class TableUrlIndexRepository : IUrlIndexRepository
             throw new ArgumentException("Long URL cannot be null or empty", nameof(longUrl));
 
         var partitionKey = UrlIndexEntity.ComputePartitionKey(longUrl);
+        var rowKey = UrlIndexEntity.ComputeRowKey(longUrl);
 
         try
         {
             await _tableClient.DeleteEntityAsync(
                 partitionKey,
-                longUrl,
+                rowKey,
                 cancellationToken: cancellationToken);
             
             return true;

@@ -35,7 +35,7 @@ public class ExpiredLinkReaperFunction
 
     [Function("ExpiredLinkReaper")]
     public async Task Run(
-        [TimerTrigger("0 */15 * * * *")] TimerInfo timer,
+        [TimerTrigger("0 0 */4 * * *")] TimerInfo timer,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Expired link reaper starting at: {Time}", _timeProvider.UtcNow);
