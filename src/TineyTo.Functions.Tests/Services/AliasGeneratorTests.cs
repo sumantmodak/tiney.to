@@ -1,3 +1,4 @@
+using TineyTo.Functions.Configuration;
 using TineyTo.Functions.Services;
 
 namespace TineyTo.Functions.Tests.Services;
@@ -8,20 +9,22 @@ public class AliasGeneratorTests
     public void Generate_ReturnsStringOfCorrectLength()
     {
         // Arrange
-        var generator = new AliasGenerator();
+        var config = new ApplicationConfiguration { AliasLength = 6 };
+        var generator = new AliasGenerator(config);
 
         // Act
         var alias = generator.Generate();
 
         // Assert
-        Assert.Equal(6, alias.Length); // Default length
+        Assert.Equal(6, alias.Length);
     }
 
     [Fact]
     public void Generate_ReturnsOnlyBase62Characters()
     {
         // Arrange
-        var generator = new AliasGenerator();
+        var config = new ApplicationConfiguration { AliasLength = 6 };
+        var generator = new AliasGenerator(config);
         const string base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
         // Act
@@ -35,7 +38,8 @@ public class AliasGeneratorTests
     public void Generate_ReturnsDifferentValuesOnMultipleCalls()
     {
         // Arrange
-        var generator = new AliasGenerator();
+        var config = new ApplicationConfiguration { AliasLength = 6 };
+        var generator = new AliasGenerator(config);
 
         // Act
         var aliases = Enumerable.Range(0, 100).Select(_ => generator.Generate()).ToList();

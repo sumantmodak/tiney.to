@@ -50,6 +50,13 @@ public class ShortenFunctionTests
         _urlIndexRepoMock.Setup(r => r.InsertAsync(It.IsAny<UrlIndexEntity>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
+        var config = new Configuration.ApplicationConfiguration 
+        { 
+            BaseUrl = "http://localhost:7071",
+            AliasLength = 6,
+            MaxTtlSeconds = 7776000
+        };
+
         _function = new ShortenFunction(
             _loggerMock.Object,
             _shortUrlRepoMock.Object,
@@ -57,7 +64,8 @@ public class ShortenFunctionTests
             _urlIndexRepoMock.Object,
             _aliasGenerator,
             _urlValidatorMock.Object,
-            _timeProvider);
+            _timeProvider,
+            config);
     }
 
     private static HttpRequest CreateRequest(ShortenRequest body)
@@ -142,9 +150,11 @@ public class ShortenFunctionTests
     }
 
     [Fact]
-    public async Task Run_WithoutExpiry_DoesNotCreateExpiryIndex()
+    public async Task Run_WithoutExpiry_CreatesExpiryIndexWithDefaultTtl()
     {
         // Arrange
+        var now = DateTimeOffset.UtcNow;
+        _timeProvider.UtcNow = now;
         var request = new ShortenRequest { LongUrl = "https://example.com" };
         var httpRequest = CreateRequest(request);
         _aliasGenerator.SetNextAlias("noexpiry");
@@ -154,9 +164,13 @@ public class ShortenFunctionTests
 
         // Assert
         Assert.IsType<CreatedResult>(result);
+        // Should create expiry index with default max TTL (7776000 seconds = 90 days)
         _expiryIndexRepoMock.Verify(
-            r => r.InsertAsync(It.IsAny<ExpiryIndexEntity>(), It.IsAny<CancellationToken>()), 
-            Times.Never);
+            r => r.InsertAsync(It.Is<ExpiryIndexEntity>(e => 
+                e.AliasRowKey == "noexpiry" && 
+                e.ExpiresAtUtc == now.AddSeconds(7776000)), 
+            It.IsAny<CancellationToken>()), 
+            Times.Once);
     }
 
     [Fact]

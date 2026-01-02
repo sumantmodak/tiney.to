@@ -1,9 +1,5 @@
-# Deploy tiney.to infrastructure and application
+# Deploy tiney.to DEV infrastructure and application
 param(
-    [Parameter(Mandatory=$true)]
-    [ValidateSet("dev", "prod")]
-    [string]$Environment,
-    
     [Parameter(Mandatory=$true)]
     [string]$ResourceGroupName,
     
@@ -12,8 +8,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$Environment = "dev"
 
-Write-Host "Deploying tiney.to to $Environment environment..." -ForegroundColor Cyan
+Write-Host "Deploying tiney.to to DEV environment..." -ForegroundColor Cyan
 
 # Create resource group if it doesn't exist
 $rg = az group show --name $ResourceGroupName 2>$null | ConvertFrom-Json
@@ -27,7 +24,7 @@ Write-Host "Deploying infrastructure..." -ForegroundColor Yellow
 $deployment = az deployment group create `
     --resource-group $ResourceGroupName `
     --template-file "$PSScriptRoot\main.bicep" `
-    --parameters "$PSScriptRoot\parameters.$Environment.json" `
+    --parameters "$PSScriptRoot\parameters.json" `
     --query "properties.outputs" `
     --output json | ConvertFrom-Json
 
@@ -36,8 +33,8 @@ Write-Host "Function App: $functionAppName" -ForegroundColor Green
 
 # Build and publish the Functions app
 Write-Host "Building application..." -ForegroundColor Yellow
-$publishPath = "$PSScriptRoot\..\publish"
-dotnet publish "$PSScriptRoot\..\src\TineyTo.Functions\TineyTo.Functions.csproj" `
+$publishPath = "$PSScriptRoot\..\..\publish"
+dotnet publish "$PSScriptRoot\..\..\src\TineyTo.Functions\TineyTo.Functions.csproj" `
     --configuration Release `
     --runtime win-x86 `
     --self-contained false `
@@ -45,7 +42,7 @@ dotnet publish "$PSScriptRoot\..\src\TineyTo.Functions\TineyTo.Functions.csproj"
 
 # Create deployment package
 Write-Host "Creating deployment package..." -ForegroundColor Yellow
-$zipPath = "$PSScriptRoot\..\publish.zip"
+$zipPath = "$PSScriptRoot\..\..\publish.zip"
 if (Test-Path $zipPath) { Remove-Item $zipPath }
 Compress-Archive -Path "$publishPath\*" -DestinationPath $zipPath
 

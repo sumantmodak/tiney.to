@@ -1,10 +1,17 @@
+using TineyTo.Functions.Configuration;
 using TineyTo.Functions.Services;
 
 namespace TineyTo.Functions.Tests.Services;
 
 public class UrlValidatorTests
 {
-    private readonly UrlValidator _validator = new();
+    private readonly UrlValidator _validator;
+
+    public UrlValidatorTests()
+    {
+        var config = new ApplicationConfiguration { MaxTtlSeconds = 7776000 };
+        _validator = new UrlValidator(config);
+    }
 
     #region ValidateLongUrl Tests
 
