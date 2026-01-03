@@ -133,6 +133,32 @@ function App() {
         </div>
       </div>
 
+      {/* Feature Cards */}
+      <div className="max-w-4xl mx-auto mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1: Fast */}
+          <div className="bg-neo-pink-light border-[5px] border-black p-6 shadow-neo-sm transform rotate-1">
+            <div className="text-5xl mb-3">⚡</div>
+            <h3 className="text-2xl font-black text-black mb-2 uppercase">FAST</h3>
+            <p className="text-lg font-bold">Lightning quick URL shortening!</p>
+          </div>
+          
+          {/* Card 2: Secure */}
+          <div className="bg-neo-blue-light border-[5px] border-black p-6 shadow-neo-sm transform -rotate-1">
+            <div className="text-5xl mb-3">🔒</div>
+            <h3 className="text-2xl font-black text-black mb-2 uppercase">SECURE</h3>
+            <p className="text-lg font-bold">Your links are safe with us!</p>
+          </div>
+          
+          {/* Card 3: Bold */}
+          <div className="bg-neo-bright-yellow border-[5px] border-black p-6 shadow-neo-sm transform rotate-1">
+            <div className="text-5xl mb-3">🎨</div>
+            <h3 className="text-2xl font-black text-black mb-2 uppercase">BOLD</h3>
+            <p className="text-lg font-bold">Stand out with style!</p>
+          </div>
+        </div>
+      </div>
+
       {/* Temporary: Keep test section below */}
       <div className="max-w-2xl mx-auto">
         {/* Test State and Functions */}
