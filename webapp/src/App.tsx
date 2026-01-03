@@ -89,6 +89,50 @@ function App() {
         </p>
       </div>
 
+      {/* Main Card */}
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="bg-white border-[5px] border-black p-8 shadow-neo-lg">
+          {/* URL Input Section */}
+          <div className="mb-8">
+            <label className="block text-xl font-black text-black mb-3 uppercase tracking-wider">
+              Paste your loooong URL here:
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => {
+                  setUrl(e.target.value)
+                  setError('')
+                }}
+                onKeyPress={handleKeyPress}
+                placeholder="https://example.com/your-very-long-url-here..."
+                className={`w-full px-6 py-5 text-xl font-bold border-[5px] ${
+                  error ? 'border-neo-pink' : 'border-black'
+                } focus:outline-none focus:shadow-[8px_8px_0px_#0066FF] transition-shadow bg-white`}
+              />
+              <LinkIcon className="absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8" />
+            </div>
+            {error && (
+              <div className="mt-4 bg-neo-pink-light border-[4px] border-neo-pink p-4 shadow-neo-error">
+                <p className="text-lg font-black text-neo-pink uppercase">⚠️ {error}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Shorten Button */}
+          <button
+            onClick={handleShorten}
+            disabled={isLoading}
+            className={`w-full py-6 text-3xl font-black uppercase bg-neo-yellow text-black border-[5px] border-black shadow-neo-sm hover:shadow-neo-lg hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0 ${
+              isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
+            }`}
+          >
+            {isLoading ? '⏳ SHORTENING...' : '✨ SHORTEN IT!'}
+          </button>
+        </div>
+      </div>
+
       {/* Temporary: Keep test section below */}
       <div className="max-w-2xl mx-auto">
         {/* Test State and Functions */}
