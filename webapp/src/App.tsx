@@ -159,6 +159,158 @@ function App() {
         </div>
       </div>
 
+      {/* Footer */}
+      <footer className="max-w-6xl mx-auto mt-20">
+        {/* Footer Main Content */}
+        <div className="bg-white border-[5px] border-black p-8 shadow-neo-md mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* About Section */}
+            <div className="transform rotate-1">
+              <div className="bg-neo-blue border-[4px] border-black px-4 py-2 mb-4 inline-block">
+                <h3 className="text-2xl font-black text-white uppercase">About</h3>
+              </div>
+              <p className="font-bold text-black mb-4">
+                Tiney.to is a FREE, BOLD, and UNAPOLOGETIC URL shortener that makes your links TINY and MIGHTY!
+              </p>
+              <p className="font-bold text-black text-sm">
+                Est. 2025 🚀
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div className="transform -rotate-1">
+              <div className="bg-neo-pink border-[4px] border-black px-4 py-2 mb-4 inline-block">
+                <h3 className="text-2xl font-black text-white uppercase">Links</h3>
+              </div>
+              <ul className="space-y-2">
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
+                    → Home
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
+                    → Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
+                    → API Docs
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
+                    → Contact
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div className="transform rotate-1">
+              <div className="bg-neo-yellow border-[4px] border-black px-4 py-2 mb-4 inline-block">
+                <h3 className="text-2xl font-black text-black uppercase">Legal</h3>
+              </div>
+              <ul className="space-y-2">
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-pink transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-pink">
+                    → Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-pink transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-pink">
+                    → Terms of Service
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-pink transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-pink">
+                    → Disclaimer
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-pink transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-pink">
+                    → Cookie Policy
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div className="transform -rotate-1">
+              <div className="bg-neo-green border-[4px] border-black px-4 py-2 mb-4 inline-block">
+                <h3 className="text-2xl font-black text-black uppercase">Support</h3>
+              </div>
+              <ul className="space-y-2">
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
+                    → Help Center
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
+                    → FAQ
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
+                    → Report Abuse
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:hello@tiney.to" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
+                    → Email Us
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Disclaimer Banner */}
+        <div className="bg-neo-pink-light border-[5px] border-neo-pink p-6 shadow-neo-error mb-8">
+          <div className="flex items-start gap-4">
+            <div className="text-4xl flex-shrink-0">⚠️</div>
+            <div>
+              <h4 className="text-xl font-black text-neo-pink uppercase mb-2">Important Disclaimer</h4>
+              <p className="font-bold text-black text-sm">
+                Tiney.to IS CURRENTLY FREE FOR LIMITED RESTRICTED USAGE BOUND BY REASONABLE REQUEST RESTRICTIONS. 
+                ALL THE LINKS WILL AUTO EXPIRE AFTER 30 DAYS IN ORDER TO KEEP THE LOAD LOW, COST IN CONTROL AND APP SNAPPY. 
+                WE PLAN TO COME BACK WITH ADVANCED USAGE VERY SOON.... STAY TUNED! 🚀
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="bg-black border-[5px] border-black p-6 shadow-neo-blue-accent mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-xl font-black text-white uppercase">
+              © 2025 Tiney.to - ALL RIGHTS RESERVED 💥
+            </p>
+            <div className="flex gap-4">
+              <a href="#" className="bg-white border-[4px] border-white px-4 py-2 font-black text-black uppercase hover:bg-neo-blue hover:text-white transition-colors">
+                Twitter
+              </a>
+              <a href="#" className="bg-white border-[4px] border-white px-4 py-2 font-black text-black uppercase hover:bg-neo-pink hover:text-white transition-colors">
+                GitHub
+              </a>
+              <a href="#" className="bg-white border-[4px] border-white px-4 py-2 font-black text-black uppercase hover:bg-neo-green hover:text-black transition-colors">
+                Discord
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Made With Love */}
+        <div className="text-center mb-8">
+          <div className="inline-block bg-neo-bright-yellow text-black px-8 py-4 border-[5px] border-black shadow-neo-xs transform -rotate-2">
+            <p className="text-2xl font-black uppercase">
+              Made In Hyderabad, India - For the world! 💥
+            </p>
+          </div>
+        </div>
+      </footer>
+
       {/* Temporary: Keep test section below */}
       <div className="max-w-2xl mx-auto">
         {/* Test State and Functions */}
