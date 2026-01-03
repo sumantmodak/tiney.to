@@ -75,6 +75,21 @@ function App() {
 
   return (
     <div className="min-h-screen bg-neo-bg p-8">
+      <Toaster position="top-center" />
+      
+      {/* Header */}
+      <div className="max-w-4xl mx-auto mb-12">
+        <h1 className="text-7xl font-black text-black mb-4 transform -rotate-1">
+          <span className="inline-block bg-neo-blue text-white px-6 py-2 border-[5px] border-black shadow-neo-sm">
+            Tiney.to
+          </span>
+        </h1>
+        <p className="text-2xl font-extrabold text-black transform rotate-1">
+          Make URLs SHORT and SNAPPY! ⚡
+        </p>
+      </div>
+
+      {/* Temporary: Keep test section below */}
       <div className="max-w-2xl mx-auto">
         {/* Test State and Functions */}
         <div className="bg-white border-[5px] border-black p-6 shadow-neo-lg mb-6">
