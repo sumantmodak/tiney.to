@@ -98,7 +98,7 @@ function App() {
               onClick={() => {
                 console.log('Current state:', { url, shortenedUrl, isLoading, error, showQR })
               }}
-              className="bg-neo-blue text-white px-4 py-2 font-bold border-[4px] border-black"
+              className="bg-neo-blue text-white px-4 py-2 font-bold border-[4px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0"
             >
               Log State
             </button>
@@ -107,20 +107,20 @@ function App() {
                 setShortenedUrl('tiney.to/test123')
                 console.log('Set test shortened URL')
               }}
-              className="bg-neo-yellow text-black px-4 py-2 font-bold border-[4px] border-black"
+              className="bg-neo-yellow text-black px-4 py-2 font-bold border-[4px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0"
             >
               Set Test URL
             </button>
             <button
               onClick={handleCopy}
               disabled={!shortenedUrl}
-              className="bg-neo-pink text-white px-4 py-2 font-bold border-[4px] border-black disabled:opacity-50"
+              className="bg-neo-pink text-white px-4 py-2 font-bold border-[4px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Test Copy Function
             </button>
             <button
               onClick={handleShorten}
-              className="bg-neo-green text-black px-4 py-2 font-bold border-[4px] border-black"
+              className="bg-neo-green text-black px-4 py-2 font-bold border-[4px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0"
             >
               Test Shorten Function
             </button>
