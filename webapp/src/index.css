@@ -1,3 +1,53 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* Neo-Brutalism Colors */
+  --color-neo-blue: #0066FF;
+  --color-neo-pink: #FF006E;
+  --color-neo-yellow: #FFBE0B;
+  --color-neo-green: #00FF87;
+  --color-neo-bright-yellow: #FFF500;
+  --color-neo-bg: #FAFAFA;
+  --color-neo-pink-light: #FFE6F0;
+  --color-neo-blue-light: #E6F3FF;
+  
+  /* Neo-Brutalism Shadows */
+  --shadow-neo-xs: 6px 6px 0px #000000;
+  --shadow-neo-sm: 8px 8px 0px #000000;
+  --shadow-neo-md: 10px 10px 0px #000000;
+  --shadow-neo-lg: 12px 12px 0px #000000;
+  --shadow-neo-error: 6px 6px 0px #FF006E;
+  --shadow-neo-blue-accent: 8px 8px 0px #0066FF;
+  
+  /* Neo-Brutalism Animations */
+  --animate-bounce-in: bounce-in 0.5s ease-out;
+  --animate-slide-down: slide-down 0.4s ease-out;
+}
+
+/* Keyframe Animations */
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  50% {
+    transform: scale(1.05) translateY(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  0% {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+}
