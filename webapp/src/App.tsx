@@ -1,7 +1,132 @@
+import { useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
+import { toast, Toaster } from 'sonner'
+import { Copy, Link as LinkIcon, QrCode } from 'lucide-react'
+
 function App() {
+  // State management
+  const [url, setUrl] = useState<string>('')
+  const [shortenedUrl, setShortenedUrl] = useState<string>('')
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string>('')
+  const [showQR, setShowQR] = useState<boolean>(false)
+
+  // URL validation function
+  const isValidUrl = (urlString: string): boolean => {
+    try {
+      const url = new URL(urlString)
+      return url.protocol === 'https:'
+    } catch {
+      return false
+    }
+  }
+
+  // Handle Enter key press
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isLoading) {
+      handleShorten()
+    }
+  }
+
+  // Handle URL shortening
+  const handleShorten = async () => {
+    // Clear any previous errors
+    setError('')
+
+    // Validate URL
+    if (!url.trim()) {
+      setError('Please enter a URL')
+      return
+    }
+
+    if (!isValidUrl(url)) {
+      setError('Please enter a valid URL https://')
+      return
+    }
+
+    // Set loading state
+    setIsLoading(true)
+
+    // TODO: API call will go here in step 33
+    console.log('Shortening URL:', url)
+
+    // Temporary delay to simulate API call
+    setTimeout(() => {
+      console.log('Would call API here')
+      setIsLoading(false)
+    }, 1000)
+  }
+
+  // Handle copy to clipboard
+  const handleCopy = () => {
+    navigator.clipboard.writeText(shortenedUrl)
+    toast.success('Copied to clipboard!', {
+      style: {
+        background: '#00FF87',
+        color: '#000000',
+        border: '5px solid #000000',
+        boxShadow: '8px 8px 0px #000000',
+        fontWeight: 'bold',
+        fontSize: '18px',
+        textTransform: 'uppercase',
+      },
+    })
+  }
+
   return (
     <div className="min-h-screen bg-neo-bg p-8">
       <div className="max-w-2xl mx-auto">
+        {/* Test State and Functions */}
+        <div className="bg-white border-[5px] border-black p-6 shadow-neo-lg mb-6">
+          <h2 className="text-2xl font-black mb-4">Function Tests</h2>
+          
+          {/* Test URL Input */}
+          <div className="mb-4">
+            <label className="block font-bold mb-2">Test URL Input:</label>
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://example.com"
+              className="w-full px-4 py-2 border-[4px] border-black font-bold"
+            />
+            <p className="text-sm mt-1">Current: {url || 'empty'}</p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => {
+                console.log('Current state:', { url, shortenedUrl, isLoading, error, showQR })
+              }}
+              className="bg-neo-blue text-white px-4 py-2 font-bold border-[4px] border-black"
+            >
+              Log State
+            </button>
+            <button
+              onClick={() => {
+                setShortenedUrl('tiney.to/test123')
+                console.log('Set test shortened URL')
+              }}
+              className="bg-neo-yellow text-black px-4 py-2 font-bold border-[4px] border-black"
+            >
+              Set Test URL
+            </button>
+            <button
+              onClick={handleCopy}
+              disabled={!shortenedUrl}
+              className="bg-neo-pink text-white px-4 py-2 font-bold border-[4px] border-black disabled:opacity-50"
+            >
+              Test Copy Function
+            </button>
+            <button
+              onClick={handleShorten}
+              className="bg-neo-green text-black px-4 py-2 font-bold border-[4px] border-black"
+            >
+              Test Shorten Function
+            </button>
+          </div>
+        </div>
+
         {/* Test Neo-Brutalism Colors and Shadows */}
         <div className="bg-white border-[5px] border-black p-8 shadow-neo-lg mb-6">
           <h1 className="text-4xl font-black text-black mb-4">
