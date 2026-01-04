@@ -47,14 +47,61 @@ function App() {
     // Set loading state
     setIsLoading(true)
 
-    // TODO: API call will go here in step 33
-    console.log('Shortening URL:', url)
+    try {
+      // Call the API to shorten the URL
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}api/shorten`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ longUrl: url }),
+        }
+      )
 
-    // Temporary delay to simulate API call
-    setTimeout(() => {
-      console.log('Would call API here')
+      // Handle successful response
+      if (response.ok) {
+        const data = await response.json()
+        setShortenedUrl(data.shortUrl) // e.g., "tiney.to/abc123"
+        setShowQR(false) // Reset QR visibility
+        toast.success('URL shortened successfully! 🎉', {
+          style: {
+            background: '#00FF87',
+            color: '#000000',
+            border: '5px solid #000000',
+            boxShadow: '8px 8px 0px #000000',
+            fontWeight: 'bold',
+            fontSize: '18px',
+            textTransform: 'uppercase',
+          },
+        })
+      } else {
+        // Handle HTTP errors (4xx, 5xx)
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || `HTTP ${response.status}`
+        throw new Error(errorMessage)
+      }
+      
       setIsLoading(false)
-    }, 1000)
+    } catch (err) {
+      // Handle network errors and HTTP errors
+      const errorMessage = err instanceof Error ? err.message : 'Something went wrong. Please try again!'
+      setError(errorMessage)
+      toast.error('Failed to shorten URL! 😢', {
+        style: {
+          background: '#FFE6F0',
+          color: '#FF006E',
+          border: '5px solid #FF006E',
+          boxShadow: '8px 8px 0px #FF006E',
+          fontWeight: 'bold',
+          fontSize: '18px',
+          textTransform: 'uppercase',
+        },
+      })
+      console.error('API Error:', err)
+      setIsLoading(false)
+    }
   }
 
   // Handle copy to clipboard
@@ -79,8 +126,16 @@ function App() {
       
       {/* Header */}
       <div className="max-w-4xl mx-auto mb-12">
-        <h1 className="text-7xl font-black text-black mb-4 transform -rotate-1">
-          <span className="inline-block bg-neo-blue text-white px-6 py-2 border-[5px] border-black shadow-neo-sm">
+        <h1 
+          className="text-7xl font-black text-black mb-4 transform -rotate-1 cursor-pointer"
+          onClick={() => {
+            setUrl('')
+            setShortenedUrl('')
+            setError('')
+            setShowQR(false)
+          }}
+        >
+          <span className="inline-block bg-neo-blue text-white px-6 py-2 border-[5px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0">
             Tiney.to
           </span>
         </h1>
@@ -133,6 +188,67 @@ function App() {
         </div>
       </div>
 
+      {/* Result Card - Step 37-44 */}
+      {shortenedUrl && (
+        <div className="max-w-4xl mx-auto mb-8 animate-bounce-in">
+          <div className="bg-neo-bright-yellow border-[5px] border-black p-8 shadow-neo-xl">
+            {/* Success Badge - Step 38 */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-neo-green border-[4px] border-black px-4 py-2">
+                <span className="text-2xl font-black">🎉</span>
+              </div>
+              <h2 className="text-3xl font-black text-black uppercase">
+                Your Short URL:
+              </h2>
+            </div>
+
+            {/* Shortened URL Display - Step 39 */}
+            <div className="bg-white border-[5px] border-black p-6 mb-6 shadow-neo-sm">
+              <p className="text-3xl font-black text-neo-blue break-all">
+                {shortenedUrl}
+              </p>
+            </div>
+
+            {/* Action Buttons Grid - Step 40-42 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Copy Button - Step 41 */}
+              <button
+                onClick={handleCopy}
+                className="flex items-center justify-center gap-3 py-5 px-6 text-xl font-black uppercase bg-neo-pink text-white border-[5px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0"
+              >
+                <Copy size={28} />
+                Copy URL
+              </button>
+
+              {/* Show QR Button - Step 42 */}
+              <button
+                onClick={() => setShowQR(!showQR)}
+                className="flex items-center justify-center gap-3 py-5 px-6 text-xl font-black uppercase bg-neo-blue text-white border-[5px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0"
+              >
+                <QrCode size={28} />
+                {showQR ? 'Hide QR' : 'Show QR'}
+              </button>
+            </div>
+
+            {/* QR Code Section - Step 43-44 */}
+            {showQR && (
+              <div className="mt-6 bg-white border-[5px] border-black p-8 shadow-neo-sm animate-slide-down">
+                <div className="flex justify-center">
+                  <div className="bg-neo-blue-light border-[4px] border-black p-4 inline-block">
+                    <QRCodeSVG
+                      value={shortenedUrl}
+                      size={200}
+                      level="H"
+                      includeMargin={true}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Feature Cards */}
       <div className="max-w-4xl mx-auto mb-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -161,110 +277,7 @@ function App() {
 
       {/* Footer */}
       <footer className="max-w-6xl mx-auto mt-20">
-        {/* Footer Main Content */}
-        <div className="bg-white border-[5px] border-black p-8 shadow-neo-md mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* About Section */}
-            <div className="transform rotate-1">
-              <div className="bg-neo-blue border-[4px] border-black px-4 py-2 mb-4 inline-block">
-                <h3 className="text-2xl font-black text-white uppercase">About</h3>
-              </div>
-              <p className="font-bold text-black mb-4">
-                Tiney.to is a FREE, BOLD, and UNAPOLOGETIC URL shortener that makes your links TINY and MIGHTY!
-              </p>
-              <p className="font-bold text-black text-sm">
-                Est. 2025 🚀
-              </p>
-            </div>
-
-            {/* Quick Links */}
-            <div className="transform -rotate-1">
-              <div className="bg-neo-pink border-[4px] border-black px-4 py-2 mb-4 inline-block">
-                <h3 className="text-2xl font-black text-white uppercase">Links</h3>
-              </div>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
-                    → Home
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
-                    → Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
-                    → API Docs
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
-                    → Contact
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div className="transform rotate-1">
-              <div className="bg-neo-yellow border-[4px] border-black px-4 py-2 mb-4 inline-block">
-                <h3 className="text-2xl font-black text-black uppercase">Legal</h3>
-              </div>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-pink transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-pink">
-                    → Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-pink transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-pink">
-                    → Terms of Service
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-pink transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-pink">
-                    → Disclaimer
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-pink transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-pink">
-                    → Cookie Policy
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Support */}
-            <div className="transform -rotate-1">
-              <div className="bg-neo-green border-[4px] border-black px-4 py-2 mb-4 inline-block">
-                <h3 className="text-2xl font-black text-black uppercase">Support</h3>
-              </div>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
-                    → Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
-                    → FAQ
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
-                    → Report Abuse
-                  </a>
-                </li>
-                <li>
-                  <a href="mailto:hello@tiney.to" className="font-black text-black hover:text-neo-blue transition-colors uppercase text-sm border-b-4 border-transparent hover:border-neo-blue">
-                    → Email Us
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        
 
         {/* Disclaimer Banner */}
         <div className="bg-neo-pink-light border-[5px] border-neo-pink p-6 shadow-neo-error mb-8">
@@ -273,9 +286,7 @@ function App() {
             <div>
               <h4 className="text-xl font-black text-neo-pink uppercase mb-2">Important Disclaimer</h4>
               <p className="font-bold text-black text-sm">
-                Tiney.to IS CURRENTLY FREE FOR LIMITED RESTRICTED USAGE BOUND BY REASONABLE REQUEST RESTRICTIONS. 
-                ALL THE LINKS WILL AUTO EXPIRE AFTER 30 DAYS IN ORDER TO KEEP THE LOAD LOW, COST IN CONTROL AND APP SNAPPY. 
-                WE PLAN TO COME BACK WITH ADVANCED USAGE VERY SOON.... STAY TUNED! 🚀
+                TINEY IS CURRENTLY FREE FOR LIMITED & RESTRICTED USAGE. 
               </p>
             </div>
           </div>
@@ -288,14 +299,8 @@ function App() {
               © 2025 Tiney.to - ALL RIGHTS RESERVED 💥
             </p>
             <div className="flex gap-4">
-              <a href="#" className="bg-white border-[4px] border-white px-4 py-2 font-black text-black uppercase hover:bg-neo-blue hover:text-white transition-colors">
-                Twitter
-              </a>
               <a href="#" className="bg-white border-[4px] border-white px-4 py-2 font-black text-black uppercase hover:bg-neo-pink hover:text-white transition-colors">
                 GitHub
-              </a>
-              <a href="#" className="bg-white border-[4px] border-white px-4 py-2 font-black text-black uppercase hover:bg-neo-green hover:text-black transition-colors">
-                Discord
               </a>
             </div>
           </div>
@@ -305,104 +310,11 @@ function App() {
         <div className="text-center mb-8">
           <div className="inline-block bg-neo-bright-yellow text-black px-8 py-4 border-[5px] border-black shadow-neo-xs transform -rotate-2">
             <p className="text-2xl font-black uppercase">
-              Made In Hyderabad, India - For the world! 💥
+              Made with love, in Hyderabad, India - For the world! 💥
             </p>
           </div>
         </div>
       </footer>
-
-      {/* Temporary: Keep test section below */}
-      <div className="max-w-2xl mx-auto">
-        {/* Test State and Functions */}
-        <div className="bg-white border-[5px] border-black p-6 shadow-neo-lg mb-6">
-          <h2 className="text-2xl font-black mb-4">Function Tests</h2>
-          
-          {/* Test URL Input */}
-          <div className="mb-4">
-            <label className="block font-bold mb-2">Test URL Input:</label>
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com"
-              className="w-full px-4 py-2 border-[4px] border-black font-bold"
-            />
-            <p className="text-sm mt-1">Current: {url || 'empty'}</p>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={() => {
-                console.log('Current state:', { url, shortenedUrl, isLoading, error, showQR })
-              }}
-              className="bg-neo-blue text-white px-4 py-2 font-bold border-[4px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0"
-            >
-              Log State
-            </button>
-            <button
-              onClick={() => {
-                setShortenedUrl('tiney.to/test123')
-                console.log('Set test shortened URL')
-              }}
-              className="bg-neo-yellow text-black px-4 py-2 font-bold border-[4px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0"
-            >
-              Set Test URL
-            </button>
-            <button
-              onClick={handleCopy}
-              disabled={!shortenedUrl}
-              className="bg-neo-pink text-white px-4 py-2 font-bold border-[4px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Test Copy Function
-            </button>
-            <button
-              onClick={handleShorten}
-              className="bg-neo-green text-black px-4 py-2 font-bold border-[4px] border-black shadow-neo-sm hover:shadow-neo-md hover:-translate-y-1 hover:-translate-x-1 transition-all active:shadow-none active:translate-x-0 active:translate-y-0"
-            >
-              Test Shorten Function
-            </button>
-          </div>
-        </div>
-
-        {/* Test Neo-Brutalism Colors and Shadows */}
-        <div className="bg-white border-[5px] border-black p-8 shadow-neo-lg mb-6">
-          <h1 className="text-4xl font-black text-black mb-4">
-            Neo-Brutalism Test
-          </h1>
-          <p className="text-lg font-bold mb-4">
-            Testing custom colors and shadows
-          </p>
-          
-          {/* Test Buttons with Different Colors */}
-          <div className="grid grid-cols-2 gap-4">
-            <button className="bg-neo-blue text-white px-6 py-4 text-xl font-black border-[5px] border-black shadow-neo-sm hover:shadow-neo-md transition-all">
-              Blue Button
-            </button>
-            <button className="bg-neo-yellow text-black px-6 py-4 text-xl font-black border-[5px] border-black shadow-neo-sm hover:shadow-neo-md transition-all">
-              Yellow Button
-            </button>
-            <button className="bg-neo-pink text-white px-6 py-4 text-xl font-black border-[5px] border-black shadow-neo-sm hover:shadow-neo-md transition-all">
-              Pink Button
-            </button>
-            <button className="bg-neo-green text-black px-6 py-4 text-xl font-black border-[5px] border-black shadow-neo-sm hover:shadow-neo-md transition-all">
-              Green Button
-            </button>
-          </div>
-        </div>
-
-        {/* Test Colored Cards */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-neo-pink-light border-[4px] border-black p-4 shadow-neo-xs">
-            <p className="font-bold">Pink Light</p>
-          </div>
-          <div className="bg-neo-blue-light border-[4px] border-black p-4 shadow-neo-xs">
-            <p className="font-bold">Blue Light</p>
-          </div>
-          <div className="bg-neo-bright-yellow border-[4px] border-black p-4 shadow-neo-xs">
-            <p className="font-bold">Bright Yellow</p>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
