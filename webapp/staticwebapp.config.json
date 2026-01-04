@@ -5,16 +5,15 @@
   },
   "routes": [
     {
-      "route": "/*",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable"
-      },
-      "allowedRoles": ["anonymous"]
-    },
-    {
       "route": "/index.html",
       "headers": {
         "cache-control": "no-cache"
+      }
+    },
+    {
+      "route": "/assets/*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
       }
     }
   ],
