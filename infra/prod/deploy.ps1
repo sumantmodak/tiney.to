@@ -40,15 +40,28 @@ dotnet publish "$PSScriptRoot/../../src/TineyTo.Functions/TineyTo.Functions.cspr
     --self-contained false `
     --output $publishPath
 
+# Ensure .azurefunctions folder exists (required by Functions runtime)
+$azureFunctionsPath = Join-Path $publishPath ".azurefunctions"
+if (-not (Test-Path $azureFunctionsPath)) {
+    Write-Host "Creating .azurefunctions metadata folder..." -ForegroundColor Yellow
+    New-Item -ItemType Directory -Path $azureFunctionsPath -Force | Out-Null
+    # Create a marker file so the folder is included in zip
+    New-Item -ItemType File -Path (Join-Path $azureFunctionsPath ".gitkeep") -Force | Out-Null
+}
+
 # Create deployment package
 Write-Host "Creating deployment package..." -ForegroundColor Yellow
 $zipPath = Resolve-Path "$PSScriptRoot/../../publish.zip" -ErrorAction SilentlyContinue
 if ($zipPath -and (Test-Path $zipPath)) { Remove-Item $zipPath -Force }
 $zipPath = Join-Path (Resolve-Path "$PSScriptRoot/../..") "publish.zip"
 
-# Include all files including hidden ones (like .azurefunctions)
-$filesToZip = Get-ChildItem -Path $publishPath -Recurse -Force | Where-Object { !$_.PSIsContainer } | Select-Object -ExpandProperty FullName
-Compress-Archive -Path $filesToZip -DestinationPath $zipPath -Force
+# Compress entire publish directory to preserve structure (including hidden folders)
+Push-Location $publishPath
+try {
+    Get-ChildItem -Force | Compress-Archive -DestinationPath $zipPath -Force
+} finally {
+    Pop-Location
+}
 
 Write-Host "Package created: $zipPath ($(((Get-Item $zipPath).Length / 1MB).ToString('0.00')) MB)" -ForegroundColor Green
 
