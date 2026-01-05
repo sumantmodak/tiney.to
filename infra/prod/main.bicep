@@ -113,6 +113,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   sku: {
     name: 'B1'
     tier: 'Basic'
+    capacity: 1
   }
   properties: {
     reserved: false // false for Windows

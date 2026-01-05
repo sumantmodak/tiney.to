@@ -3,3 +3,5 @@
 /src/TineyTo.Functions.Tests/bin/
 /src/TineyTo.Functions/bin/
 /src/TineyTo.Functions/obj/
+/.azurite
+/webapp/Tiney.to Web App Build/
