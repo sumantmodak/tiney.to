@@ -299,7 +299,7 @@ function App() {
               © 2025 Tiney.to - ALL RIGHTS RESERVED 💥
             </p>
             <div className="flex gap-4">
-              <a href="#" className="bg-white border-[4px] border-white px-4 py-2 font-black text-black uppercase hover:bg-neo-pink hover:text-white transition-colors">
+              <a href="https://github.com/sumantmodak/tiney.to" target="_blank" rel="noopener noreferrer" className="bg-white border-[4px] border-white px-4 py-2 font-black text-black uppercase hover:bg-neo-pink hover:text-white transition-colors">
                 GitHub
               </a>
             </div>
