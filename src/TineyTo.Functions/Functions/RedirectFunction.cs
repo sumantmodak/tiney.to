@@ -29,14 +29,21 @@ public partial class RedirectFunction
 
     [Function("Redirect")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{alias}")] HttpRequest req,
-        string alias,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{alias?}")] HttpRequest req,
+        string? alias,
         CancellationToken cancellationToken)
     {
+        // Handle root path - redirect to www.tiney.to
+        if (string.IsNullOrEmpty(alias))
+        {
+            _logger.LogInformation("Root path accessed, redirecting to www.tiney.to");
+            return new RedirectResult("https://www.tiney.to", permanent: true);
+        }
+
         _logger.LogInformation("Processing redirect for alias: {Alias}", alias);
 
         // Validate alias format
-        if (string.IsNullOrEmpty(alias) || !AliasFormatRegex().IsMatch(alias))
+        if (!AliasFormatRegex().IsMatch(alias))
         {
             _logger.LogWarning("Invalid alias format: {Alias}", alias);
             return new NotFoundResult();
