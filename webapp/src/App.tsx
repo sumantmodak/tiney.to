@@ -305,15 +305,6 @@ function App() {
             </div>
           </div>
         </div>
-
-        {/* Made With Love */}
-        <div className="text-center mb-8">
-          <div className="inline-block bg-neo-bright-yellow text-black px-8 py-4 border-[5px] border-black shadow-neo-xs transform -rotate-2">
-            <p className="text-2xl font-black uppercase">
-              Made with love, in Hyderabad, India - For the world! 💥
-            </p>
-          </div>
-        </div>
       </footer>
     </div>
   )
