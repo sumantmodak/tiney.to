@@ -25,6 +25,39 @@ param cacheDurationSeconds int = 900
 @description('Negative cache duration in seconds (1 minute)')
 param cacheNegativeSeconds int = 60
 
+@description('Enable rate limiting')
+param rateLimitEnabled bool = true
+
+@description('Max shorten requests per URL within the time window')
+param rateLimitShortenPerUrl int = 5
+
+@description('Time window in seconds for per-URL shorten rate limit')
+param rateLimitShortenPerUrlWindow int = 60
+
+@description('Max shorten requests per IP within the time window')
+param rateLimitShortenPerIp int = 10
+
+@description('Time window in seconds for per-IP shorten rate limit')
+param rateLimitShortenPerIpWindow int = 60
+
+@description('Max redirect requests per alias within the time window')
+param rateLimitRedirectPerAlias int = 100
+
+@description('Time window in seconds for per-alias redirect rate limit')
+param rateLimitRedirectPerAliasWindow int = 10
+
+@description('Max redirect requests per IP within the time window')
+param rateLimitRedirectPerIp int = 60
+
+@description('Time window in seconds for per-IP redirect rate limit')
+param rateLimitRedirectPerIpWindow int = 60
+
+@description('Max 404 responses per IP within the time window')
+param rateLimitNotFoundPerIp int = 20
+
+@description('Time window in seconds for 404 rate limit')
+param rateLimitNotFoundPerIpWindow int = 60
+
 var uniqueSuffix = environmentName == 'prod' ? '783f57bd' : '549adabd'
 var storageAccountName = 'storagetiney${environmentName}${uniqueSuffix}'
 var functionAppName = 'func-tiney-${environmentName}-${uniqueSuffix}'
@@ -213,6 +246,50 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'CACHE_NEGATIVE_SECONDS'
           value: string(cacheNegativeSeconds)
+        }
+        {
+          name: 'RATE_LIMIT_ENABLED'
+          value: string(rateLimitEnabled)
+        }
+        {
+          name: 'RATE_LIMIT_SHORTEN_PER_URL'
+          value: string(rateLimitShortenPerUrl)
+        }
+        {
+          name: 'RATE_LIMIT_SHORTEN_PER_URL_WINDOW'
+          value: string(rateLimitShortenPerUrlWindow)
+        }
+        {
+          name: 'RATE_LIMIT_SHORTEN_PER_IP'
+          value: string(rateLimitShortenPerIp)
+        }
+        {
+          name: 'RATE_LIMIT_SHORTEN_PER_IP_WINDOW'
+          value: string(rateLimitShortenPerIpWindow)
+        }
+        {
+          name: 'RATE_LIMIT_REDIRECT_PER_ALIAS'
+          value: string(rateLimitRedirectPerAlias)
+        }
+        {
+          name: 'RATE_LIMIT_REDIRECT_PER_ALIAS_WINDOW'
+          value: string(rateLimitRedirectPerAliasWindow)
+        }
+        {
+          name: 'RATE_LIMIT_REDIRECT_PER_IP'
+          value: string(rateLimitRedirectPerIp)
+        }
+        {
+          name: 'RATE_LIMIT_REDIRECT_PER_IP_WINDOW'
+          value: string(rateLimitRedirectPerIpWindow)
+        }
+        {
+          name: 'RATE_LIMIT_404_PER_IP'
+          value: string(rateLimitNotFoundPerIp)
+        }
+        {
+          name: 'RATE_LIMIT_404_PER_IP_WINDOW'
+          value: string(rateLimitNotFoundPerIpWindow)
         }
       ]
     }

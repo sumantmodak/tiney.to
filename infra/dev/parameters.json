@@ -25,6 +25,39 @@
     },
     "cacheNegativeSeconds": {
       "value": 60
+    },
+    "rateLimitEnabled": {
+      "value": true
+    },
+    "rateLimitShortenPerUrl": {
+      "value": 5
+    },
+    "rateLimitShortenPerUrlWindow": {
+      "value": 60
+    },
+    "rateLimitShortenPerIp": {
+      "value": 10
+    },
+    "rateLimitShortenPerIpWindow": {
+      "value": 60
+    },
+    "rateLimitRedirectPerAlias": {
+      "value": 100
+    },
+    "rateLimitRedirectPerAliasWindow": {
+      "value": 10
+    },
+    "rateLimitRedirectPerIp": {
+      "value": 60
+    },
+    "rateLimitRedirectPerIpWindow": {
+      "value": 60
+    },
+    "rateLimitNotFoundPerIp": {
+      "value": 20
+    },
+    "rateLimitNotFoundPerIpWindow": {
+      "value": 60
     }
   }
 }

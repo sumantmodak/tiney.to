@@ -20,11 +20,13 @@ var host = new HostBuilder()
         var appConfig = ApplicationConfiguration.LoadFromEnvironment();
         var storageConfig = StorageConfiguration.LoadFromEnvironment();
         var cacheConfig = CacheConfiguration.LoadFromEnvironment();
+        var rateLimitConfig = RateLimitConfiguration.LoadFromEnvironment();
         
         // Register configurations as singletons
         services.AddSingleton(appConfig);
         services.AddSingleton(storageConfig);
         services.AddSingleton(cacheConfig);
+        services.AddSingleton(rateLimitConfig);
 
         // Table clients (singleton for connection reuse)
         var tableServiceClient = new TableServiceClient(storageConfig.TableConnection);
@@ -76,6 +78,9 @@ var host = new HostBuilder()
         services.AddSingleton<IUrlValidator, UrlValidator>();
         services.AddSingleton<ITimeProvider, SystemTimeProvider>();
         services.AddSingleton<ICacheMetrics, LoggingCacheMetrics>();
+
+        // Rate limiter - uses the same IMemoryCache instance
+        services.AddSingleton<IRateLimiter, SlidingWindowRateLimiter>();
     })
     .Build();
 
