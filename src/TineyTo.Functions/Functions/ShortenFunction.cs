@@ -22,6 +22,7 @@ public partial class ShortenFunction
     private readonly IUrlValidator _urlValidator;
     private readonly ITimeProvider _timeProvider;
     private readonly IRateLimiter _rateLimiter;
+    private readonly ApiAuthConfiguration _apiAuthConfig;
     private readonly string _shortBaseUrl;
     private const int MaxAliasRetries = 3;
     private readonly int _maxTtlSeconds;
@@ -38,7 +39,8 @@ public partial class ShortenFunction
         IUrlValidator urlValidator,
         ITimeProvider timeProvider,
         IRateLimiter rateLimiter,
-        ApplicationConfiguration config)
+        ApplicationConfiguration config,
+        ApiAuthConfiguration apiAuthConfig)
     {
         _logger = logger;
         _shortUrlRepository = shortUrlRepository;
@@ -48,6 +50,7 @@ public partial class ShortenFunction
         _urlValidator = urlValidator;
         _timeProvider = timeProvider;
         _rateLimiter = rateLimiter;
+        _apiAuthConfig = apiAuthConfig;
         _shortBaseUrl = config.BaseUrl;
         _maxTtlSeconds = config.MaxTtlSeconds;
     }
@@ -58,6 +61,26 @@ public partial class ShortenFunction
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing shorten request");
+
+        // Validate API authentication if enabled
+        if (_apiAuthConfig.IsEnabled)
+        {
+            if (!req.Headers.TryGetValue("X-API-Key", out var apiKeyHeader) || 
+                string.IsNullOrWhiteSpace(apiKeyHeader))
+            {
+                _logger.LogWarning("Shorten request rejected: Missing or empty X-API-Key header");
+                return new UnauthorizedObjectResult(new { error = "API key required" });
+            }
+
+            var providedKey = apiKeyHeader.ToString();
+            if (!_apiAuthConfig.ValidApiKeys.Contains(providedKey))
+            {
+                _logger.LogWarning("Shorten request rejected: Invalid API key provided");
+                return new UnauthorizedObjectResult(new { error = "Invalid API key" });
+            }
+
+            _logger.LogDebug("API authentication successful");
+        }
 
         // Extract client IP for rate limiting
         var clientIp = ClientIpExtractor.GetClientIp(req);

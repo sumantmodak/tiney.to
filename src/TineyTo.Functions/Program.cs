@@ -21,12 +21,14 @@ var host = new HostBuilder()
         var storageConfig = StorageConfiguration.LoadFromEnvironment();
         var cacheConfig = CacheConfiguration.LoadFromEnvironment();
         var rateLimitConfig = RateLimitConfiguration.LoadFromEnvironment();
+        var apiAuthConfig = ApiAuthConfiguration.LoadFromEnvironment();
         
         // Register configurations as singletons
         services.AddSingleton(appConfig);
         services.AddSingleton(storageConfig);
         services.AddSingleton(cacheConfig);
         services.AddSingleton(rateLimitConfig);
+        services.AddSingleton(apiAuthConfig);
 
         // Table clients (singleton for connection reuse)
         var tableServiceClient = new TableServiceClient(storageConfig.TableConnection);
