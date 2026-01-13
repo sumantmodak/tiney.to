@@ -1,0 +1,63 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "prod"
+    },
+    "baseUrl": {
+      "value": "https://tiney.to"
+    },
+    "aliasLength": {
+      "value": 6
+    },
+    "maxTtlSeconds": {
+      "value": 2592000
+    },
+    "cacheEnabled": {
+      "value": true
+    },
+    "cacheSizeMb": {
+      "value": 50
+    },
+    "cacheDurationSeconds": {
+      "value": 900
+    },
+    "cacheNegativeSeconds": {
+      "value": 60
+    },
+    "rateLimitEnabled": {
+      "value": true
+    },
+    "rateLimitShortenPerUrl": {
+      "value": 3
+    },
+    "rateLimitShortenPerUrlWindow": {
+      "value": 60
+    },
+    "rateLimitShortenPerIp": {
+      "value": 20
+    },
+    "rateLimitShortenPerIpWindow": {
+      "value": 60
+    },
+    "rateLimitRedirectPerAlias": {
+      "value": 1000
+    },
+    "rateLimitRedirectPerAliasWindow": {
+      "value": 10
+    },
+    "rateLimitRedirectPerIp": {
+      "value": 100
+    },
+    "rateLimitRedirectPerIpWindow": {
+      "value": 60
+    },
+    "rateLimitNotFoundPerIp": {
+      "value": 10
+    },
+    "rateLimitNotFoundPerIpWindow": {
+      "value": 60
+    }
+  }
+}
