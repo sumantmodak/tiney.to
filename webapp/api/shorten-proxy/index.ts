@@ -1,9 +1,6 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
+import { Context, HttpRequest } from "@azure/functions";
 
-export async function shortenProxy(
-  request: HttpRequest,
-  context: InvocationContext
-): Promise<HttpResponseInit> {
+module.exports = async function (context: Context, req: HttpRequest): Promise<void> {
   context.log("Shorten proxy function processing request");
 
   // Get configuration from environment variables
@@ -11,23 +8,24 @@ export async function shortenProxy(
   const apiKey = process.env.BACKEND_API_KEY;
 
   if (!apiKey) {
-    context.error("BACKEND_API_KEY not configured");
-    return {
+    context.log.error("BACKEND_API_KEY not configured");
+    context.res = {
       status: 500,
-      jsonBody: { error: "Proxy configuration error" },
+      body: { error: "Proxy configuration error" },
     };
+    return;
   }
 
   // Extract real client IP from Azure Static Web Apps headers
   // SWA provides the client IP in X-Forwarded-For header
-  const forwardedFor = request.headers.get("x-forwarded-for");
+  const forwardedFor = req.headers["x-forwarded-for"] as string;
   const clientIp = forwardedFor ? forwardedFor.split(",")[0].trim() : "unknown";
 
   context.log(`Client IP extracted: ${clientIp}`);
 
   try {
     // Get request body
-    const body = await request.text();
+    const body = JSON.stringify(req.body);
 
     // Forward request to backend with API key
     const backendEndpoint = `${backendUrl}/api/shorten`;
@@ -51,29 +49,22 @@ export async function shortenProxy(
       `Backend responded with status ${response.status} for client IP ${clientIp}`
     );
 
-    return {
+    context.res = {
       status: response.status,
       headers: {
         "Content-Type": "application/json",
       },
-      jsonBody: data,
+      body: data,
     };
   } catch (error) {
-    context.error("Error forwarding request to backend:", error);
-    return {
+    context.log.error("Error forwarding request to backend:", error);
+    context.res = {
       status: 502,
-      jsonBody: {
+      body: {
         error: "Failed to connect to backend service",
         message:
           error instanceof Error ? error.message : "Unknown error occurred",
       },
     };
   }
-}
-
-app.http("shorten-proxy", {
-  methods: ["POST"],
-  authLevel: "anonymous",
-  route: "shorten-proxy",
-  handler: shortenProxy,
-});
+};
