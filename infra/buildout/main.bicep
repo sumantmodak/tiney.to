@@ -58,6 +58,13 @@ param rateLimitNotFoundPerIp int = 20
 @description('Time window in seconds for 404 rate limit')
 param rateLimitNotFoundPerIpWindow int = 60
 
+@description('Enable API key authentication for shorten endpoint')
+param apiAuthEnabled bool = true
+
+@description('Comma-separated list of valid API keys for shorten endpoint')
+@secure()
+param shortenApiKeys string
+
 var uniqueSuffix = environmentName == 'prod' ? '783f57bd' : '549adabd'
 var storageAccountName = 'tineystash${uniqueSuffix}'
 var functionAppName = 'tiney-swiftlink-${environmentName}-${uniqueSuffix}'
@@ -291,6 +298,14 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'RATE_LIMIT_404_PER_IP_WINDOW'
           value: string(rateLimitNotFoundPerIpWindow)
+        }
+        {
+          name: 'API_AUTH_ENABLED'
+          value: string(apiAuthEnabled)
+        }
+        {
+          name: 'SHORTEN_API_KEYS'
+          value: shortenApiKeys
         }
       ]
     }

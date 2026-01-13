@@ -57,7 +57,11 @@
       "value": 10
     },
     "rateLimitNotFoundPerIpWindow": {
-      "value": 60
-    }
+      "value": 60    },
+    "apiAuthEnabled": {
+      "value": true
+    },
+    "shortenApiKeys": {
+      "value": "REPLACE_WITH_GENERATED_API_KEYS"    }
   }
 }
