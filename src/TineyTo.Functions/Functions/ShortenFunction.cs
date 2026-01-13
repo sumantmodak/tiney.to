@@ -21,6 +21,7 @@ public partial class ShortenFunction
     private readonly IAliasGenerator _aliasGenerator;
     private readonly IUrlValidator _urlValidator;
     private readonly ITimeProvider _timeProvider;
+    private readonly IRateLimiter _rateLimiter;
     private readonly string _shortBaseUrl;
     private const int MaxAliasRetries = 3;
     private readonly int _maxTtlSeconds;
@@ -36,6 +37,7 @@ public partial class ShortenFunction
         IAliasGenerator aliasGenerator,
         IUrlValidator urlValidator,
         ITimeProvider timeProvider,
+        IRateLimiter rateLimiter,
         ApplicationConfiguration config)
     {
         _logger = logger;
@@ -45,6 +47,7 @@ public partial class ShortenFunction
         _aliasGenerator = aliasGenerator;
         _urlValidator = urlValidator;
         _timeProvider = timeProvider;
+        _rateLimiter = rateLimiter;
         _shortBaseUrl = config.BaseUrl;
         _maxTtlSeconds = config.MaxTtlSeconds;
     }
@@ -55,6 +58,18 @@ public partial class ShortenFunction
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing shorten request");
+
+        // Extract client IP for rate limiting
+        var clientIp = ClientIpExtractor.GetClientIp(req);
+
+        // Check IP-based rate limit first (before parsing body)
+        var ipRateResult = _rateLimiter.CheckShortenIp(clientIp);
+        if (!ipRateResult.IsAllowed)
+        {
+            _logger.LogWarning("Rate limit exceeded for IP {ClientIp}: {Count}/{Limit}", 
+                clientIp, ipRateResult.CurrentCount, ipRateResult.Limit);
+            return CreateRateLimitResponse(ipRateResult);
+        }
         
         ShortenRequest? request;
         try
@@ -77,6 +92,15 @@ public partial class ShortenFunction
         if (!longUrlValid)
         {
             return new BadRequestObjectResult(new { error = longUrlError });
+        }
+
+        // Check URL-based rate limit (after validation to avoid wasting resources)
+        var urlRateResult = _rateLimiter.CheckShortenUrl(request.LongUrl);
+        if (!urlRateResult.IsAllowed)
+        {
+            _logger.LogWarning("Rate limit exceeded for URL from {ClientIp}: {Count}/{Limit}", 
+                clientIp, urlRateResult.CurrentCount, urlRateResult.Limit);
+            return CreateRateLimitResponse(urlRateResult);
         }
 
         // Validate TTL
@@ -179,5 +203,21 @@ public partial class ShortenFunction
         };
 
         return new CreatedResult($"/{alias}", response);
+    }
+
+    /// <summary>
+    /// Creates a 429 Too Many Requests response with appropriate headers.
+    /// </summary>
+    private static IActionResult CreateRateLimitResponse(RateLimitResult result)
+    {
+        var response = new ObjectResult(new
+        {
+            error = "Too many requests. Please try again later.",
+            retryAfterSeconds = result.RetryAfterSeconds
+        })
+        {
+            StatusCode = StatusCodes.Status429TooManyRequests
+        };
+        return response;
     }
 }

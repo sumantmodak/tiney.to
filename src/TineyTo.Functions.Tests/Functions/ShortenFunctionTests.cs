@@ -22,6 +22,7 @@ public class ShortenFunctionTests
     private readonly MockAliasGenerator _aliasGenerator;
     private readonly Mock<IUrlValidator> _urlValidatorMock;
     private readonly MockTimeProvider _timeProvider;
+    private readonly MockRateLimiter _rateLimiter;
     private readonly ShortenFunction _function;
 
     public ShortenFunctionTests()
@@ -33,6 +34,7 @@ public class ShortenFunctionTests
         _aliasGenerator = new MockAliasGenerator();
         _urlValidatorMock = new Mock<IUrlValidator>();
         _timeProvider = new MockTimeProvider();
+        _rateLimiter = new MockRateLimiter();
 
         // Default to valid validation
         _urlValidatorMock.Setup(v => v.ValidateLongUrl(It.IsAny<string>()))
@@ -65,6 +67,7 @@ public class ShortenFunctionTests
             _aliasGenerator,
             _urlValidatorMock.Object,
             _timeProvider,
+            _rateLimiter,
             config);
     }
 
