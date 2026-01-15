@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - dev
+    paths:
+      - 'src/TineyTo.Functions/**'
   workflow_dispatch:
 
 env:

@@ -22,6 +22,7 @@ public partial class ShortenFunction
     private readonly IUrlValidator _urlValidator;
     private readonly ITimeProvider _timeProvider;
     private readonly IRateLimiter _rateLimiter;
+    private readonly IStatisticsQueue _statisticsQueue;
     private readonly ApiAuthConfiguration _apiAuthConfig;
     private readonly string _shortBaseUrl;
     private const int MaxAliasRetries = 3;
@@ -39,6 +40,7 @@ public partial class ShortenFunction
         IUrlValidator urlValidator,
         ITimeProvider timeProvider,
         IRateLimiter rateLimiter,
+        IStatisticsQueue statisticsQueue,
         ApplicationConfiguration config,
         ApiAuthConfiguration apiAuthConfig)
     {
@@ -50,6 +52,7 @@ public partial class ShortenFunction
         _urlValidator = urlValidator;
         _timeProvider = timeProvider;
         _rateLimiter = rateLimiter;
+        _statisticsQueue = statisticsQueue;
         _apiAuthConfig = apiAuthConfig;
         _shortBaseUrl = config.BaseUrl;
         _maxTtlSeconds = config.MaxTtlSeconds;
@@ -215,6 +218,14 @@ public partial class ShortenFunction
         }
 
         _logger.LogInformation("Created short URL: {Alias} -> {LongUrl}", alias, request.LongUrl);
+
+        // Queue statistics event (fire-and-forget, don't wait)
+        _ = _statisticsQueue.QueueEventAsync(new StatisticsEvent
+        {
+            EventType = StatisticsEventType.LinkCreated,
+            Timestamp = _timeProvider.UtcNow,
+            Alias = alias
+        }, cancellationToken);
 
         var response = new ShortenResponse
         {

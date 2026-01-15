@@ -23,6 +23,7 @@ public class ShortenFunctionTests
     private readonly Mock<IUrlValidator> _urlValidatorMock;
     private readonly MockTimeProvider _timeProvider;
     private readonly MockRateLimiter _rateLimiter;
+    private readonly MockStatisticsQueue _statisticsQueue;
     private readonly ShortenFunction _function;
 
     public ShortenFunctionTests()
@@ -35,6 +36,7 @@ public class ShortenFunctionTests
         _urlValidatorMock = new Mock<IUrlValidator>();
         _timeProvider = new MockTimeProvider();
         _rateLimiter = new MockRateLimiter();
+        _statisticsQueue = new MockStatisticsQueue();
 
         // Default to valid validation
         _urlValidatorMock.Setup(v => v.ValidateLongUrl(It.IsAny<string>()))
@@ -75,6 +77,7 @@ public class ShortenFunctionTests
             _urlValidatorMock.Object,
             _timeProvider,
             _rateLimiter,
+            _statisticsQueue,
             config,
             apiAuthConfig);
     }
@@ -296,6 +299,7 @@ public class ShortenFunctionWithAuthTests
     private readonly Mock<IUrlValidator> _urlValidatorMock;
     private readonly MockTimeProvider _timeProvider;
     private readonly MockRateLimiter _rateLimiter;
+    private readonly MockStatisticsQueue _statisticsQueue;
     private readonly ShortenFunction _function;
     private const string ValidApiKey1 = "test-key-1234567890abcdef";
     private const string ValidApiKey2 = "test-key-9876543210fedcba";
@@ -310,6 +314,7 @@ public class ShortenFunctionWithAuthTests
         _urlValidatorMock = new Mock<IUrlValidator>();
         _timeProvider = new MockTimeProvider();
         _rateLimiter = new MockRateLimiter();
+        _statisticsQueue = new MockStatisticsQueue();
 
         // Default to valid validation
         _urlValidatorMock.Setup(v => v.ValidateLongUrl(It.IsAny<string>()))
@@ -349,6 +354,7 @@ public class ShortenFunctionWithAuthTests
             _urlValidatorMock.Object,
             _timeProvider,
             _rateLimiter,
+            _statisticsQueue,
             config,
             apiAuthConfig);
     }

@@ -16,6 +16,7 @@ public class RedirectFunctionTests
     private readonly Mock<IShortUrlRepository> _shortUrlRepoMock;
     private readonly MockTimeProvider _timeProvider;
     private readonly MockRateLimiter _rateLimiter;
+    private readonly MockStatisticsQueue _statisticsQueue;
     private readonly RedirectFunction _function;
 
     public RedirectFunctionTests()
@@ -24,11 +25,13 @@ public class RedirectFunctionTests
         _shortUrlRepoMock = new Mock<IShortUrlRepository>();
         _timeProvider = new MockTimeProvider();
         _rateLimiter = new MockRateLimiter();
+        _statisticsQueue = new MockStatisticsQueue();
         _function = new RedirectFunction(
             _loggerMock.Object,
             _shortUrlRepoMock.Object,
             _timeProvider,
-            _rateLimiter);
+            _rateLimiter,
+            _statisticsQueue);
     }
 
     [Fact]

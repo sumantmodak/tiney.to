@@ -65,6 +65,9 @@ param apiAuthEnabled bool = true
 @secure()
 param shortenApiKeys string
 
+@description('Name of the Azure Storage Queue for statistics events')
+param statisticsQueueName string = 'statistics-events'
+
 var uniqueSuffix = environmentName == 'prod' ? '783f57bd' : '549adabd'
 var storageAccountName = 'tineystash${uniqueSuffix}'
 var functionAppName = 'tiney-swiftlink-${environmentName}-${uniqueSuffix}'
@@ -306,6 +309,14 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'SHORTEN_API_KEYS'
           value: shortenApiKeys
+        }
+        {
+          name: 'STATISTICS_QUEUE_NAME'
+          value: statisticsQueueName
+        }
+        {
+          name: 'STATISTICS_QUEUE_CONNECTION'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
         }
       ]
     }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using TineyTo.Functions.Models;
 using TineyTo.Functions.Services;
 using TineyTo.Functions.Storage;
 
@@ -14,6 +15,7 @@ public partial class RedirectFunction
     private readonly IShortUrlRepository _shortUrlRepository;
     private readonly ITimeProvider _timeProvider;
     private readonly IRateLimiter _rateLimiter;
+    private readonly IStatisticsQueue _statisticsQueue;
 
     [GeneratedRegex(@"^[A-Za-z0-9_-]{1,32}$")]
     private static partial Regex AliasFormatRegex();
@@ -22,12 +24,14 @@ public partial class RedirectFunction
         ILogger<RedirectFunction> logger,
         IShortUrlRepository shortUrlRepository,
         ITimeProvider timeProvider,
-        IRateLimiter rateLimiter)
+        IRateLimiter rateLimiter,
+        IStatisticsQueue statisticsQueue)
     {
         _logger = logger;
         _shortUrlRepository = shortUrlRepository;
         _timeProvider = timeProvider;
         _rateLimiter = rateLimiter;
+        _statisticsQueue = statisticsQueue;
     }
 
     [Function("Redirect")]
@@ -104,6 +108,15 @@ public partial class RedirectFunction
         }
 
         _logger.LogInformation("Redirecting {Alias} to {LongUrl}", alias, entity.LongUrl);
+
+        // Queue statistics event (fire-and-forget, don't wait)
+        _ = _statisticsQueue.QueueEventAsync(new StatisticsEvent
+        {
+            EventType = StatisticsEventType.Redirect,
+            Timestamp = _timeProvider.UtcNow,
+            Alias = alias
+        }, cancellationToken);
+
         return new RedirectResult(entity.LongUrl, permanent: false);
     }
 

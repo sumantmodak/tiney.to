@@ -31,6 +31,7 @@ Before deploying, update `buildout/parameters.json`:
 
 - **apiAuthEnabled**: Enable/disable API key authentication (default: true)
 - **shortenApiKeys**: Comma-separated list of valid API keys for shorten endpoint
+- **statisticsQueueName**: Name of the Azure Storage Queue for statistics events (default: statistics-events)
 - **baseUrl**: The base URL for short links (e.g., `https://tiney.to`)
 - **maxTtlSeconds**: Maximum TTL for shortened URLs (default: 2592000 = 30 days)
 - **cacheEnabled**: Enable in-memory caching (default: true)
@@ -51,10 +52,17 @@ The deployment script will:
 ## Resources Created
 
 - **Azure Functions**: .NET 8 isolated worker for URL shortening logic
-- **Storage Account**: Azure Table Storage for URL mappings and indices
+- **Storage Account**: Azure Table Storage for URL mappings and indices, Azure Queue Storage for statistics events
 - **App Service Plan**: Hosting plan for the Function App
 - **Application Insights**: Monitoring and diagnostics
 - **Log Analytics Workspace**: Log aggregation and analysis
+
+## Azure Storage
+
+The storage account includes:
+- **Table Storage**: ShortUrls, ShortUrlsExpiryIndex, UrlIndex tables
+- **Queue Storage**: statistics-events queue (auto-created on first use)
+- **Blob Storage**: Distributed locks for background jobs
 
 ## Post-Deployment
 

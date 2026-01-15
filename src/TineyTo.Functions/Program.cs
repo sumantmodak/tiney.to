@@ -1,5 +1,6 @@
 using Azure.Data.Tables;
 using Azure.Storage.Blobs;
+using Azure.Storage.Queues;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ var host = new HostBuilder()
         var cacheConfig = CacheConfiguration.LoadFromEnvironment();
         var rateLimitConfig = RateLimitConfiguration.LoadFromEnvironment();
         var apiAuthConfig = ApiAuthConfiguration.LoadFromEnvironment();
+        var statisticsConfig = StatisticsConfiguration.LoadFromEnvironment();
         
         // Register configurations as singletons
         services.AddSingleton(appConfig);
@@ -29,9 +31,11 @@ var host = new HostBuilder()
         services.AddSingleton(cacheConfig);
         services.AddSingleton(rateLimitConfig);
         services.AddSingleton(apiAuthConfig);
+        services.AddSingleton(statisticsConfig);
 
         // Table clients (singleton for connection reuse)
         var tableServiceClient = new TableServiceClient(storageConfig.TableConnection);
+        services.AddSingleton(tableServiceClient);
         
         var shortUrlTable = tableServiceClient.GetTableClient(storageConfig.ShortUrlTableName);
         shortUrlTable.CreateIfNotExists();
@@ -39,7 +43,6 @@ var host = new HostBuilder()
 
         var expiryIndexTable = tableServiceClient.GetTableClient(storageConfig.ExpiryIndexTableName);
         expiryIndexTable.CreateIfNotExists();
-        services.AddSingleton<TableClient>(sp => expiryIndexTable);
 
         var urlIndexTable = tableServiceClient.GetTableClient(storageConfig.UrlIndexTableName);
         urlIndexTable.CreateIfNotExists();
@@ -47,6 +50,12 @@ var host = new HostBuilder()
         // Blob client for GC locking
         var blobServiceClient = new BlobServiceClient(storageConfig.GcBlobLockConnection);
         var containerClient = blobServiceClient.GetBlobContainerClient(storageConfig.GcBlobLockContainer);
+
+        // Queue client for statistics events
+        var queueServiceClient = new QueueServiceClient(statisticsConfig.QueueConnection);
+        var statisticsQueueClient = queueServiceClient.GetQueueClient(statisticsConfig.QueueName);
+        statisticsQueueClient.CreateIfNotExists();
+        services.AddSingleton(statisticsQueueClient);
         containerClient.CreateIfNotExists();
         services.AddSingleton(containerClient);
         
@@ -80,6 +89,7 @@ var host = new HostBuilder()
         services.AddSingleton<IUrlValidator, UrlValidator>();
         services.AddSingleton<ITimeProvider, SystemTimeProvider>();
         services.AddSingleton<ICacheMetrics, LoggingCacheMetrics>();
+        services.AddSingleton<IStatisticsQueue, AzureStorageStatisticsQueue>();
 
         // Rate limiter - uses the same IMemoryCache instance
         services.AddSingleton<IRateLimiter, SlidingWindowRateLimiter>();

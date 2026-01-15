@@ -62,6 +62,10 @@
       "value": true
     },
     "shortenApiKeys": {
-      "value": "REPLACE_WITH_GENERATED_API_KEYS"    }
+      "value": "REPLACE_WITH_GENERATED_API_KEYS"
+    },
+    "statisticsQueueName": {
+      "value": "statistics-events"
+    }
   }
 }
