@@ -21,6 +21,9 @@ public partial class ShortenFunction
     private readonly IAliasGenerator _aliasGenerator;
     private readonly IUrlValidator _urlValidator;
     private readonly ITimeProvider _timeProvider;
+    private readonly IRateLimiter _rateLimiter;
+    private readonly IStatisticsQueue _statisticsQueue;
+    private readonly ApiAuthConfiguration _apiAuthConfig;
     private readonly string _shortBaseUrl;
     private const int MaxAliasRetries = 3;
     private readonly int _maxTtlSeconds;
@@ -36,7 +39,10 @@ public partial class ShortenFunction
         IAliasGenerator aliasGenerator,
         IUrlValidator urlValidator,
         ITimeProvider timeProvider,
-        ApplicationConfiguration config)
+        IRateLimiter rateLimiter,
+        IStatisticsQueue statisticsQueue,
+        ApplicationConfiguration config,
+        ApiAuthConfiguration apiAuthConfig)
     {
         _logger = logger;
         _shortUrlRepository = shortUrlRepository;
@@ -45,6 +51,9 @@ public partial class ShortenFunction
         _aliasGenerator = aliasGenerator;
         _urlValidator = urlValidator;
         _timeProvider = timeProvider;
+        _rateLimiter = rateLimiter;
+        _statisticsQueue = statisticsQueue;
+        _apiAuthConfig = apiAuthConfig;
         _shortBaseUrl = config.BaseUrl;
         _maxTtlSeconds = config.MaxTtlSeconds;
     }
@@ -55,6 +64,38 @@ public partial class ShortenFunction
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing shorten request");
+
+        // Validate API authentication if enabled
+        if (_apiAuthConfig.IsEnabled)
+        {
+            if (!req.Headers.TryGetValue("X-API-Key", out var apiKeyHeader) || 
+                string.IsNullOrWhiteSpace(apiKeyHeader))
+            {
+                _logger.LogWarning("Shorten request rejected: Missing or empty X-API-Key header");
+                return new UnauthorizedObjectResult(new { error = "API key required" });
+            }
+
+            var providedKey = apiKeyHeader.ToString();
+            if (!_apiAuthConfig.ValidApiKeys.Contains(providedKey))
+            {
+                _logger.LogWarning("Shorten request rejected: Invalid API key provided");
+                return new UnauthorizedObjectResult(new { error = "Invalid API key" });
+            }
+
+            _logger.LogDebug("API authentication successful");
+        }
+
+        // Extract client IP for rate limiting
+        var clientIp = ClientIpExtractor.GetClientIp(req);
+
+        // Check IP-based rate limit first (before parsing body)
+        var ipRateResult = _rateLimiter.CheckShortenIp(clientIp);
+        if (!ipRateResult.IsAllowed)
+        {
+            _logger.LogWarning("Rate limit exceeded for IP {ClientIp}: {Count}/{Limit}", 
+                clientIp, ipRateResult.CurrentCount, ipRateResult.Limit);
+            return CreateRateLimitResponse(ipRateResult);
+        }
         
         ShortenRequest? request;
         try
@@ -77,6 +118,15 @@ public partial class ShortenFunction
         if (!longUrlValid)
         {
             return new BadRequestObjectResult(new { error = longUrlError });
+        }
+
+        // Check URL-based rate limit (after validation to avoid wasting resources)
+        var urlRateResult = _rateLimiter.CheckShortenUrl(request.LongUrl);
+        if (!urlRateResult.IsAllowed)
+        {
+            _logger.LogWarning("Rate limit exceeded for URL from {ClientIp}: {Count}/{Limit}", 
+                clientIp, urlRateResult.CurrentCount, urlRateResult.Limit);
+            return CreateRateLimitResponse(urlRateResult);
         }
 
         // Validate TTL
@@ -169,6 +219,14 @@ public partial class ShortenFunction
 
         _logger.LogInformation("Created short URL: {Alias} -> {LongUrl}", alias, request.LongUrl);
 
+        // Queue statistics event (fire-and-forget, don't wait)
+        _ = _statisticsQueue.QueueEventAsync(new StatisticsEvent
+        {
+            EventType = StatisticsEventType.LinkCreated,
+            Timestamp = _timeProvider.UtcNow,
+            Alias = alias
+        }, cancellationToken);
+
         var response = new ShortenResponse
         {
             Alias = alias,
@@ -179,5 +237,21 @@ public partial class ShortenFunction
         };
 
         return new CreatedResult($"/{alias}", response);
+    }
+
+    /// <summary>
+    /// Creates a 429 Too Many Requests response with appropriate headers.
+    /// </summary>
+    private static IActionResult CreateRateLimitResponse(RateLimitResult result)
+    {
+        var response = new ObjectResult(new
+        {
+            error = "Too many requests. Please try again later.",
+            retryAfterSeconds = result.RetryAfterSeconds
+        })
+        {
+            StatusCode = StatusCodes.Status429TooManyRequests
+        };
+        return response;
     }
 }

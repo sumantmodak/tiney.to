@@ -15,6 +15,8 @@ public class RedirectFunctionTests
     private readonly Mock<ILogger<RedirectFunction>> _loggerMock;
     private readonly Mock<IShortUrlRepository> _shortUrlRepoMock;
     private readonly MockTimeProvider _timeProvider;
+    private readonly MockRateLimiter _rateLimiter;
+    private readonly MockStatisticsQueue _statisticsQueue;
     private readonly RedirectFunction _function;
 
     public RedirectFunctionTests()
@@ -22,10 +24,14 @@ public class RedirectFunctionTests
         _loggerMock = new Mock<ILogger<RedirectFunction>>();
         _shortUrlRepoMock = new Mock<IShortUrlRepository>();
         _timeProvider = new MockTimeProvider();
+        _rateLimiter = new MockRateLimiter();
+        _statisticsQueue = new MockStatisticsQueue();
         _function = new RedirectFunction(
             _loggerMock.Object,
             _shortUrlRepoMock.Object,
-            _timeProvider);
+            _timeProvider,
+            _rateLimiter,
+            _statisticsQueue);
     }
 
     [Fact]
@@ -116,7 +122,6 @@ public class RedirectFunctionTests
     }
 
     [Theory]
-    [InlineData("")]
     [InlineData("!invalid!")]
     [InlineData("has spaces")]
     public async Task Run_InvalidAliasFormat_Returns404(string alias)

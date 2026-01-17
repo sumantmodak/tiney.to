@@ -48,17 +48,14 @@ function App() {
     setIsLoading(true)
 
     try {
-      // Call the API to shorten the URL
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}api/shorten`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ longUrl: url }),
-        }
-      )
+      // Call the SWA proxy API to shorten the URL
+      const response = await fetch('/api/shorten-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ longUrl: url }),
+      })
 
       // Handle successful response
       if (response.ok) {
@@ -79,7 +76,13 @@ function App() {
       } else {
         // Handle HTTP errors (4xx, 5xx)
         const errorData = await response.json().catch(() => ({}))
-        const errorMessage = errorData.error || `HTTP ${response.status}`
+        let errorMessage = errorData.error || `HTTP ${response.status}`
+        
+        // Special handling for 502 (proxy connection failure)
+        if (response.status === 502) {
+          errorMessage = 'Service temporarily unavailable. Please try again.'
+        }
+        
         throw new Error(errorMessage)
       }
       

@@ -25,12 +25,55 @@ param cacheDurationSeconds int = 900
 @description('Negative cache duration in seconds (1 minute)')
 param cacheNegativeSeconds int = 60
 
+@description('Enable rate limiting')
+param rateLimitEnabled bool = true
+
+@description('Max shorten requests per URL within the time window')
+param rateLimitShortenPerUrl int = 5
+
+@description('Time window in seconds for per-URL shorten rate limit')
+param rateLimitShortenPerUrlWindow int = 60
+
+@description('Max shorten requests per IP within the time window')
+param rateLimitShortenPerIp int = 10
+
+@description('Time window in seconds for per-IP shorten rate limit')
+param rateLimitShortenPerIpWindow int = 60
+
+@description('Max redirect requests per alias within the time window')
+param rateLimitRedirectPerAlias int = 100
+
+@description('Time window in seconds for per-alias redirect rate limit')
+param rateLimitRedirectPerAliasWindow int = 10
+
+@description('Max redirect requests per IP within the time window')
+param rateLimitRedirectPerIp int = 60
+
+@description('Time window in seconds for per-IP redirect rate limit')
+param rateLimitRedirectPerIpWindow int = 60
+
+@description('Max 404 responses per IP within the time window')
+param rateLimitNotFoundPerIp int = 20
+
+@description('Time window in seconds for 404 rate limit')
+param rateLimitNotFoundPerIpWindow int = 60
+
+@description('Enable API key authentication for shorten endpoint')
+param apiAuthEnabled bool = true
+
+@description('Comma-separated list of valid API keys for shorten endpoint')
+@secure()
+param shortenApiKeys string
+
+@description('Name of the Azure Storage Queue for statistics events')
+param statisticsQueueName string = 'statistics-events'
+
 var uniqueSuffix = environmentName == 'prod' ? '783f57bd' : '549adabd'
-var storageAccountName = 'storagetiney${environmentName}${uniqueSuffix}'
-var functionAppName = 'func-tiney-${environmentName}-${uniqueSuffix}'
-var appServicePlanName = 'asp-tiney-${environmentName}-${uniqueSuffix}'
-var appInsightsName = 'appi-tiney-${environmentName}-${uniqueSuffix}'
-var logAnalyticsName = 'log-tiney-${environmentName}-${uniqueSuffix}'
+var storageAccountName = 'tineystash${uniqueSuffix}'
+var functionAppName = 'tiney-swiftlink-${environmentName}-${uniqueSuffix}'
+var appServicePlanName = 'appservice-turbohub-${environmentName}-${uniqueSuffix}'
+var appInsightsName = 'tiney-eyewatch-${environmentName}-${uniqueSuffix}'
+var logAnalyticsName = 'tiney-swiftlogs-${environmentName}-${uniqueSuffix}'
 
 // Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
@@ -106,7 +149,7 @@ resource locksContainer 'Microsoft.Storage/storageAccounts/blobServices/containe
   }
 }
 
-// App Service Plan (Consumption/Dynamic tier for Functions)
+// App Service Plan (Linux Basic tier for Production)
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: appServicePlanName
   location: location
@@ -115,24 +158,25 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
     tier: 'Basic'
     capacity: 1
   }
+  kind: 'linux'
   properties: {
-    reserved: false // false for Windows
+    reserved: true // true for Linux
   }
 }
 
-// Function App
+// Function App (Linux)
 resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
   name: functionAppName
   location: location
-  kind: 'functionapp'
+  kind: 'functionapp,linux'
   properties: {
     serverFarmId: appServicePlan.id
     httpsOnly: true
     siteConfig: {
-      netFrameworkVersion: 'v8.0'
+      linuxFxVersion: 'DOTNET-ISOLATED|8.0'
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
-      use32BitWorkerProcess: true
+      use32BitWorkerProcess: false
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
@@ -213,6 +257,66 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'CACHE_NEGATIVE_SECONDS'
           value: string(cacheNegativeSeconds)
+        }
+        {
+          name: 'RATE_LIMIT_ENABLED'
+          value: string(rateLimitEnabled)
+        }
+        {
+          name: 'RATE_LIMIT_SHORTEN_PER_URL'
+          value: string(rateLimitShortenPerUrl)
+        }
+        {
+          name: 'RATE_LIMIT_SHORTEN_PER_URL_WINDOW'
+          value: string(rateLimitShortenPerUrlWindow)
+        }
+        {
+          name: 'RATE_LIMIT_SHORTEN_PER_IP'
+          value: string(rateLimitShortenPerIp)
+        }
+        {
+          name: 'RATE_LIMIT_SHORTEN_PER_IP_WINDOW'
+          value: string(rateLimitShortenPerIpWindow)
+        }
+        {
+          name: 'RATE_LIMIT_REDIRECT_PER_ALIAS'
+          value: string(rateLimitRedirectPerAlias)
+        }
+        {
+          name: 'RATE_LIMIT_REDIRECT_PER_ALIAS_WINDOW'
+          value: string(rateLimitRedirectPerAliasWindow)
+        }
+        {
+          name: 'RATE_LIMIT_REDIRECT_PER_IP'
+          value: string(rateLimitRedirectPerIp)
+        }
+        {
+          name: 'RATE_LIMIT_REDIRECT_PER_IP_WINDOW'
+          value: string(rateLimitRedirectPerIpWindow)
+        }
+        {
+          name: 'RATE_LIMIT_404_PER_IP'
+          value: string(rateLimitNotFoundPerIp)
+        }
+        {
+          name: 'RATE_LIMIT_404_PER_IP_WINDOW'
+          value: string(rateLimitNotFoundPerIpWindow)
+        }
+        {
+          name: 'API_AUTH_ENABLED'
+          value: string(apiAuthEnabled)
+        }
+        {
+          name: 'SHORTEN_API_KEYS'
+          value: shortenApiKeys
+        }
+        {
+          name: 'STATISTICS_QUEUE_NAME'
+          value: statisticsQueueName
+        }
+        {
+          name: 'STATISTICS_QUEUE_CONNECTION'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
         }
       ]
     }
