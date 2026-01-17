@@ -227,14 +227,6 @@ dotnet test /p:CollectCoverage=true
 - **Statistics Processor** - Processes queued events for analytics
 - **Expired Link Reaper** - Removes expired links (runs every 6 hours)
 
-## Documentation
-
-- [Statistics System Design](statssystem.md)
-- [Authentication Setup](AUTH_SETUP.md)
-- [Abuse Detection Design](ABUSE_DETECTION_DESIGN.md)
-- [Infrastructure README](infra/README.md)
-- [Web App Project Plan](webapp/PROJECT_PLAN.md)
-
 ## License
 
 MIT
