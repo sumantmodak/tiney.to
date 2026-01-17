@@ -5,8 +5,10 @@
 
 Visit [Tiney.To](https://tiney.to)
 
-A high-performance, production-ready serverless URL shortener built with Azure Functions (.NET 8), Azure Table Storage, and React.
-
+#### A high-performance, production-ready serverless URL shortener built with Azure Functions (.NET 8), Azure Table Storage, and React.
+![Azure](https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=microsoftazure&logoColor=white)
+![Azure Functions](https://img.shields.io/badge/Azure_Functions-0062AD?style=for-the-badge&logo=azure-functions&logoColor=white)
+![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp&logoColor=white)
 ## Features
 
 ### Core Functionality
